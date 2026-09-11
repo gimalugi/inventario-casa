@@ -199,3 +199,18 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [x] Nessuna modifica allo schema SQLite.
 - [x] Nessun polling/scheduler/job aggiuntivo.
 - [x] Versione README coerente con config.yaml (2.1.3).
+
+
+## v2.1.4 - Paginazione 50 elementi
+- [ ] Primo caricamento: massimo 50 elementi.
+- [ ] Successivi sostituisce la pagina precedente.
+- [ ] Precedenti torna indietro di 50.
+- [ ] Primi torna alla prima pagina.
+- [ ] Ultimi apre direttamente l'ultima pagina.
+- [ ] Indicatore corretto, es. 701–734 di 734.
+- [ ] Funziona nei sottogruppi, es. Fumetti → Zagor.
+- [ ] Funziona nei gruppi senza sottogruppi.
+- [ ] Ricerca globale funzionante.
+- [ ] Apertura elemento funzionante.
+- [ ] Modifica elemento funzionante.
+- [ ] Database e foto invariati.

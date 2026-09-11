@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2.1.4
+- Paginazione reale da 50 elementi per gruppi e sottogruppi.
+- La pagina successiva sostituisce quella precedente invece di accumularla.
+- Aggiunti i comandi Primi, Precedenti, Successivi e Ultimi.
+- Mostrato l'intervallo corrente, ad esempio 701–734 di 734.
+- Ottimizzato il comportamento per raccolte molto grandi come Zagor.
+- In memoria vengono mantenuti soltanto gli elementi delle pagine attualmente visualizzate.
+- Nessuna modifica al database o alle API.
+- Nessun processo in background.
+
 ## 2.1.3
 - Evidenziato chiaramente il sottogruppo attualmente aperto nell’elenco.
 - Intestazione del sottogruppo aperto con accento ciano/blu, bordo luminoso e conteggio più visibile.

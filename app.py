@@ -2285,6 +2285,27 @@ textarea:focus{
 .item-preview-label{font-weight:800;color:var(--muted)}
 .item-preview-value{white-space:pre-wrap;word-break:break-word}
 @media(max-width:640px){.item-preview-row{grid-template-columns:1fr;gap:3px}.item-preview-dialog{width:100%}.item-preview-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.inventory-pager{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:10px;
+}
+
+.inventory-pager button{
+  width:auto;
+  min-width:0;
+  padding:7px 10px;
+}
+
+.inventory-pager .hint{
+  padding:0 5px;
+  white-space:nowrap;
+}
+
 </style>
 </head>
 <body>
@@ -2538,7 +2559,7 @@ textarea:focus{
 </div>
 
 <script>
-let S={types:[],items:[],suggestions:{},counts:{},groups:[],groupItems:{},groupHasMore:{},subgroups:{},subgroupItems:{},subgroupHasMore:{},matched_count:0,page_size:50};
+let S={types:[],items:[],suggestions:{},counts:{},groups:[],groupItems:{},groupHasMore:{},groupOffsets:{},subgroups:{},subgroupItems:{},subgroupHasMore:{},subgroupOffsets:{},matched_count:0,page_size:50};
 let editingItem=null, editingType=null, viewingItem=null;
 
 const $=id=>document.getElementById(id);
@@ -2691,7 +2712,11 @@ async function loadInventoryGroups(){
   S.page_size=Number(data.page_size||50);
   S.groupItems={};
   S.groupHasMore={};
-  S.subgroups={}; S.subgroupItems={}; S.subgroupHasMore={};
+  S.groupOffsets={};
+  S.subgroups={};
+  S.subgroupItems={};
+  S.subgroupHasMore={};
+  S.subgroupOffsets={};
   S.items=[];
 }
 
@@ -2701,27 +2726,71 @@ function mergeLoadedItems(items){
   S.items=[...byId.values()];
 }
 
-async function loadGroupPage(key,reset=false){
+function rebuildVisibleItems(){
+  const byId=new Map();
+
+  for(const rows of Object.values(S.groupItems||{})){
+    for(const item of (rows||[])) byId.set(item.id,item);
+  }
+
+  for(const rows of Object.values(S.subgroupItems||{})){
+    for(const item of (rows||[])) byId.set(item.id,item);
+  }
+
+  S.items=[...byId.values()];
+}
+
+async function loadGroupPage(key,reset=false,requestedOffset=null){
   const grouping=currentItemsGrouping();
-  const existing=reset?[]:(S.groupItems[key]||[]);
+  const pageSize=S.page_size||50;
+  const current=Number(S.groupOffsets?.[key]||0);
+
+  const offset=requestedOffset===null
+    ? (reset ? 0 : current+pageSize)
+    : Math.max(0,Number(requestedOffset)||0);
+
   const q=$('search').value.trim();
+
   const params=new URLSearchParams({
     group_by:grouping,
     group_key:key,
-    offset:String(existing.length)
+    offset:String(offset)
   });
+
   if(q)params.set('q',q);
+
   const data=await api('api/inventory-items?'+params.toString());
-  const combined=reset?(data.items||[]):[...existing,...(data.items||[])];
-  S.groupItems[key]=combined;
+
+  S.groupItems[key]=data.items||[];
+  S.groupOffsets[key]=Number(data.offset??offset);
   S.groupHasMore[key]=!!data.has_more;
-  mergeLoadedItems(data.items||[]);
+
+  rebuildVisibleItems();
   renderInventory();
 }
 
 async function loadMoreGroup(key,event){
   event?.stopPropagation?.();
   await loadGroupPage(key,false);
+}
+
+async function loadPreviousGroup(key,event){
+  event?.stopPropagation?.();
+  const pageSize=S.page_size||50;
+  const current=Number(S.groupOffsets?.[key]||0);
+  await loadGroupPage(key,false,Math.max(0,current-pageSize));
+}
+
+async function loadFirstGroup(key,event){
+  event?.stopPropagation?.();
+  await loadGroupPage(key,false,0);
+}
+
+async function loadLastGroup(key,total,event){
+  event?.stopPropagation?.();
+  const pageSize=S.page_size||50;
+  const offset=Math.floor(Math.max(0,Number(total||0)-1)/pageSize)*pageSize;
+  await loadGroupPage(key,false,offset);
 }
 
 async function load(){
@@ -2732,7 +2801,11 @@ async function load(){
   S.groups=[];
   S.groupItems={};
   S.groupHasMore={};
-  S.subgroups={}; S.subgroupItems={}; S.subgroupHasMore={};
+  S.groupOffsets={};
+  S.subgroups={};
+  S.subgroupItems={};
+  S.subgroupHasMore={};
+  S.subgroupOffsets={};
   S.items=[];
   S.page_size=50;
   await loadInventoryGroups();
@@ -2819,10 +2892,28 @@ function renderItemRow(i){
 }
 
 function renderLoadMore(key,loaded,total){
-  if(!S.groupHasMore[key])return '';
-  const remaining=Math.max(0,total-loaded);
-  const next=Math.min(S.page_size||50,remaining);
-  return `<button type="button" class="load-more-btn secondary" onclick="loadMoreGroup('${esc(key)}',event)">＋ Carica altri ${next}<span>${loaded} di ${total}</span></button>`;
+  if(!loaded)return '';
+
+  const offset=Number(S.groupOffsets?.[key]||0);
+  const first=offset+1;
+  const last=Math.min(offset+loaded,total);
+
+  const hasPrev=offset>0;
+  const hasNext=!!S.groupHasMore[key];
+
+  return `<div class="inventory-pager">
+    ${hasPrev ? `
+      <button type="button" class="secondary" onclick="loadFirstGroup('${esc(key)}',event)">⏮ Primi</button>
+      <button type="button" class="secondary" onclick="loadPreviousGroup('${esc(key)}',event)">‹ Precedenti</button>
+    ` : ''}
+
+    <span class="hint"><strong>${first}–${last}</strong> di ${total}</span>
+
+    ${hasNext ? `
+      <button type="button" class="secondary" onclick="loadMoreGroup('${esc(key)}',event)">Successivi ›</button>
+      <button type="button" class="secondary" onclick="loadLastGroup('${esc(key)}',${total},event)">Ultimi ⏭</button>
+    ` : ''}
+  </div>`;
 }
 
 function subgroupCacheKey(typeKey,subKey){return String(typeKey)+'::'+String(subKey);}
@@ -2842,19 +2933,98 @@ async function toggleSubgroup(btn){
   const ck=subgroupCacheKey(tk,sk);
   if(!collapsed && !(S.subgroupItems[ck]||[]).length) await loadSubgroupPage(tk,sk,true);
 }
-async function loadSubgroupPage(typeKey,subKey,reset=false){
-  const ck=subgroupCacheKey(typeKey,subKey), existing=reset?[]:(S.subgroupItems[ck]||[]), q=$('search').value.trim();
-  const p=new URLSearchParams({type_id:String(typeKey),subgroup_key:String(subKey),offset:String(existing.length)}); if(q)p.set('q',q);
+async function loadSubgroupPage(typeKey,subKey,reset=false,requestedOffset=null){
+  const ck=subgroupCacheKey(typeKey,subKey);
+  const pageSize=S.page_size||50;
+  const current=Number(S.subgroupOffsets?.[ck]||0);
+
+  const offset=requestedOffset===null
+    ? (reset ? 0 : current+pageSize)
+    : Math.max(0,Number(requestedOffset)||0);
+
+  const q=$('search').value.trim();
+
+  const p=new URLSearchParams({
+    type_id:String(typeKey),
+    subgroup_key:String(subKey),
+    offset:String(offset)
+  });
+
+  if(q)p.set('q',q);
+
   const d=await api('api/inventory-subgroup-items?'+p.toString());
-  S.subgroupItems[ck]=reset?(d.items||[]):[...existing,...(d.items||[])]; S.subgroupHasMore[ck]=!!d.has_more;
-  mergeLoadedItems(d.items||[]); renderInventory();
+
+  S.subgroupItems[ck]=d.items||[];
+  S.subgroupOffsets[ck]=Number(d.offset??offset);
+  S.subgroupHasMore[ck]=!!d.has_more;
+
+  rebuildVisibleItems();
+  renderInventory();
 }
-async function loadMoreSubgroup(typeKey,subKey,event){event?.stopPropagation?.();await loadSubgroupPage(typeKey,subKey,false);}
+
+async function loadMoreSubgroup(typeKey,subKey,event){
+  event?.stopPropagation?.();
+  await loadSubgroupPage(typeKey,subKey,false);
+}
+
+async function loadPreviousSubgroup(typeKey,subKey,event){
+  event?.stopPropagation?.();
+
+  const ck=subgroupCacheKey(typeKey,subKey);
+  const pageSize=S.page_size||50;
+  const current=Number(S.subgroupOffsets?.[ck]||0);
+
+  await loadSubgroupPage(
+    typeKey,
+    subKey,
+    false,
+    Math.max(0,current-pageSize)
+  );
+}
+
+async function loadFirstSubgroup(typeKey,subKey,event){
+  event?.stopPropagation?.();
+  await loadSubgroupPage(typeKey,subKey,false,0);
+}
+
+async function loadLastSubgroup(typeKey,subKey,total,event){
+  event?.stopPropagation?.();
+
+  const pageSize=S.page_size||50;
+  const offset=Math.floor(
+    Math.max(0,Number(total||0)-1)/pageSize
+  )*pageSize;
+
+  await loadSubgroupPage(typeKey,subKey,false,offset);
+}
+
 function renderSubgroupLoadMore(typeKey,subKey,loaded,total){
-  const ck=subgroupCacheKey(typeKey,subKey); if(!S.subgroupHasMore[ck])return '';
-  const next=Math.min(S.page_size||50,Math.max(0,total-loaded));
-  return `<button type="button" class="load-more-btn secondary" onclick="loadMoreSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">＋ Carica altri ${next}<span>${loaded} di ${total}</span></button>`;
+  if(!loaded)return '';
+
+  const ck=subgroupCacheKey(typeKey,subKey);
+  const offset=Number(S.subgroupOffsets?.[ck]||0);
+
+  const first=offset+1;
+  const last=Math.min(offset+loaded,total);
+
+  const hasPrev=offset>0;
+  const hasNext=!!S.subgroupHasMore[ck];
+
+  return `<div class="inventory-pager">
+    ${hasPrev ? `
+      <button type="button" class="secondary" onclick="loadFirstSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">⏮ Primi</button>
+      <button type="button" class="secondary" onclick="loadPreviousSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">‹ Precedenti</button>
+    ` : ''}
+
+    <span class="hint"><strong>${first}–${last}</strong> di ${total}</span>
+
+    ${hasNext ? `
+      <button type="button" class="secondary" onclick="loadMoreSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">Successivi ›</button>
+      <button type="button" class="secondary" onclick="loadLastSubgroup('${esc(typeKey)}','${esc(subKey)}',${total},event)">Ultimi ⏭</button>
+    ` : ''}
+  </div>`;
 }
+
 function renderTypeSubgroups(typeKey){
   const subs=S.subgroups[typeKey];
   if(subs===undefined){setTimeout(()=>loadSubgroups(typeKey),0);return '<div class="inventory-loader">Carico i sottogruppi…</div>';}
