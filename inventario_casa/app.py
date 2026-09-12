@@ -2429,18 +2429,17 @@ textarea:focus{
 html.ha-theme-linked,
 html.ha-theme-linked body{
   color:var(--primary-text-color,var(--inv-text)) !important;
-  background:var(--primary-background-color,var(--inv-bg-2)) !important;
+  background:var(
+    --lovelace-background,
+    var(--primary-background-color,var(--inv-bg-2))
+  ) !important;
   background-attachment:fixed !important;
+  background-size:cover !important;
+  background-position:center !important;
 }
 
 html.ha-theme-linked body::before{
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--primary-color,#4fb0ff) 10%, transparent),
-      transparent 48%,
-      color-mix(in srgb, var(--accent-color,var(--primary-color,#4fb0ff)) 8%, transparent)
-    ) !important;
+  background:transparent !important;
 }
 
 html.ha-theme-linked .stat,
@@ -2515,7 +2514,12 @@ html.ha-theme-linked .search-clear{
 
   html.ha-theme-linked,
   html.ha-theme-linked body{
-    background:var(--primary-background-color,var(--inv-bg-2)) !important;
+    background:var(
+      --lovelace-background,
+      var(--primary-background-color,var(--inv-bg-2))
+    ) !important;
+    background-size:cover !important;
+    background-position:center !important;
   }
 }
 
@@ -2809,7 +2813,10 @@ const homeAssistantThemeVars=[
   '--primary-color',
   '--accent-color',
   '--divider-color',
-  '--input-fill-color'
+  '--input-fill-color',
+  '--lovelace-background',
+  '--app-header-background-color',
+  '--sidebar-background-color'
 ];
 
 function syncHomeAssistantTheme(){
