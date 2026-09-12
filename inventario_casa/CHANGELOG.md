@@ -1,3 +1,11 @@
+## 2.2.2
+- Corretto su smartphone il campo Nome dei campi personalizzati nell'editor Tipologie.
+- Il pulsante microfono non occupa più tutta la larghezza e non nasconde il nome del campo.
+- Aggiunto pulsante × di chiusura in alto a destra alle principali finestre dell'app.
+- Pulsante × disponibile in Modifica tipologia, Dettagli elemento, Scheda elemento e Scanner ISBN/EAN.
+- Nessuna modifica al database, agli elementi o alle foto.
+- Nessun processo in background.
+
 ## 2.2.1
 
 - Tema grafico collegato dinamicamente ai colori del tema Home Assistant quando eseguito tramite Ingress.

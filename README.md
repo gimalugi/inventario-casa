@@ -1,4 +1,4 @@
-# Inventario Casa v2.1.5
+# Inventario Casa v2.2.2
 
 Versione correttiva e completa.
 

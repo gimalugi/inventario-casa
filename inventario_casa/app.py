@@ -2539,6 +2539,90 @@ html.ha-theme-linked .search-clear{
   }
 }
 
+
+/* v2.2.2 - fix editor tipologie mobile e chiusura dialog */
+.dialog{
+  position:relative;
+}
+
+.dialog-close-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:20;
+  width:42px !important;
+  min-width:42px !important;
+  max-width:42px !important;
+  height:42px;
+  min-height:42px !important;
+  padding:0 !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50% !important;
+  border:1.5px solid rgba(255,255,255,.42) !important;
+  background:rgba(20,24,30,.88) !important;
+  color:#fff !important;
+  box-shadow:0 2px 12px rgba(0,0,0,.25) !important;
+  font-size:27px !important;
+  font-family:Arial,sans-serif !important;
+  font-weight:400 !important;
+  line-height:1 !important;
+}
+
+.dialog-close-btn:hover,
+.dialog-close-btn:focus-visible{
+  border-color:var(--accent-blue) !important;
+  background:rgba(35,43,53,.96) !important;
+  outline:none;
+}
+
+.dialog > h2{
+  padding-right:58px !important;
+}
+
+@media(max-width:640px){
+
+  /* Il nome del campo occupa tutta la riga */
+  #typeDlg .fieldrow > .voicewrap{
+    grid-column:1 / -1 !important;
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  #typeDlg .fieldrow > .voicewrap .flabel{
+    width:100% !important;
+    min-width:0 !important;
+    padding-right:56px !important;
+  }
+
+  /* Il microfono resta un piccolo pulsante a destra:
+     non eredita width:100% dai pulsanti della fieldrow. */
+  #typeDlg .fieldrow .micbtn{
+    width:40px !important;
+    min-width:40px !important;
+    max-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+    padding:0 !important;
+    right:6px !important;
+  }
+
+  /* X sempre raggiungibile anche scorrendo una dialog full-screen */
+  .dialog-close-btn{
+    position:fixed;
+    top:max(8px, env(safe-area-inset-top));
+    right:10px;
+    width:42px !important;
+    min-width:42px !important;
+    max-width:42px !important;
+  }
+
+  .dialog > h2{
+    padding-right:58px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2670,6 +2754,7 @@ html.ha-theme-linked .search-clear{
 
 <div id="typeDlg" class="dialogbg">
   <div class="dialog">
+    <button type="button" class="dialog-close-btn" onclick="closeTypeDialog()" aria-label="Chiudi" title="Chiudi">×</button>
     <h2 id="typeDlgTitle">🏷️ Tipologia</h2>
     <div class="form">
       <select id="tIcon">
@@ -2701,6 +2786,7 @@ html.ha-theme-linked .search-clear{
 
 <div id="viewDlg" class="dialogbg" onclick="if(event.target===this) closeItemPreview()">
   <div class="dialog item-preview-dialog">
+    <button type="button" class="dialog-close-btn" onclick="closeItemPreview()" aria-label="Chiudi" title="Chiudi">×</button>
     <h2 id="viewTitle">📦 Dettagli elemento</h2>
     <div id="viewPhotos" class="item-preview-photos"></div>
     <div id="viewDetails" class="item-preview-list"></div>
@@ -2713,6 +2799,7 @@ html.ha-theme-linked .search-clear{
 
 <div id="editDlg" class="dialogbg">
   <div class="dialog">
+    <button type="button" class="dialog-close-btn" onclick="closeEdit()" aria-label="Chiudi" title="Chiudi">×</button>
     <h2>✏️ Scheda elemento</h2>
     <div class="tabs">
       <button class="tabbtn active" onclick="showTab('edit','general',this)">Generale</button>
@@ -2779,6 +2866,7 @@ html.ha-theme-linked .search-clear{
 
 <div id="barcodeDlg" class="dialogbg" onclick="if(event.target===this) stopBarcodeScan()">
   <div class="dialog barcode-dialog">
+    <button type="button" class="dialog-close-btn" onclick="stopBarcodeScan()" aria-label="Chiudi" title="Chiudi">×</button>
     <h2>📷 Scansiona ISBN / EAN</h2>
     <div class="hint">In HTTPS usa la scansione live. In accesso locale HTTP apre automaticamente la fotocamera per scattare il codice. Nessuna scansione in background.</div>
     <br>

@@ -244,3 +244,16 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [ ] Ricerca globale funzionante.
 - [ ] Apertura e modifica elemento funzionanti.
 - [ ] Nessuna modifica ai dati SQLite o alle foto.
+
+
+## v2.2.2 - UI mobile e chiusura dialog
+- [ ] Nome campo personalizzato completamente visibile su smartphone.
+- [ ] Microfono compatto e allineato a destra del campo Nome.
+- [ ] Microfono non copre il testo durante modifica tipologia.
+- [ ] Pulsante × visibile in Modifica tipologia.
+- [ ] Pulsante × visibile in Dettagli elemento.
+- [ ] Pulsante × visibile in Scheda elemento.
+- [ ] Pulsante × visibile nello scanner ISBN/EAN.
+- [ ] I pulsanti Annulla/Chiudi esistenti continuano a funzionare.
+- [ ] Layout desktop invariato.
+- [ ] Database e foto invariati.
