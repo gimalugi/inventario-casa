@@ -1748,7 +1748,7 @@ async function loadBackups(){
       ? rows.map(b=>`
         <div class="backup">
           <strong>${esc(b.filename)}</strong><br>
-          <span class="muted">${esc(b.modified)} · ${bytes(b.size)}</span><br>
+          <span class="muted">${esc(backupDate(b.modified))} · ${bytes(b.size)}</span><br>
           <span class="${b.valid?'ok':'bad'}">
             ${b.valid?'✓ Backup integro':'⚠ '+esc(b.integrity)}
           </span>
@@ -3487,6 +3487,10 @@ html.ha-theme-linked .search-clear{
   justify-content:center;
   text-decoration:none;
   padding:8px 10px;
+  background:rgba(79,176,255,.14);
+  color:#9fd2ff;
+  border:1px solid rgba(79,176,255,.34);
+  font-weight:700;
 }
 #backupDlg .backup-restore{
   background:rgba(255,173,66,.14);
@@ -5116,6 +5120,13 @@ async function openBackupDialog(){
 
 function closeBackupDialog(){
   $('backupDlg').classList.remove('show');
+}
+
+function backupDate(value){
+  if(!value) return "";
+  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+  if(!m) return value;
+  return `${m[3]}/${m[2]}/${m[1]} · ${m[4]}:${m[5]}:${m[6]}`;
 }
 
 async function loadBackupList(){

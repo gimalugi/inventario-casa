@@ -302,3 +302,9 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [ ] Pulsante Ripristina resta distinto e visibile.
 - [ ] Su mobile i pulsanti si dispongono verticalmente.
 - [ ] Nessuna modifica alla logica backup/restore/recovery.
+
+## v2.3.2 - Backup UI polish
+
+- [ ] Pulsante Scarica visivamente coerente con Ripristina.
+- [ ] Data backup mostrata nel formato GG/MM/AAAA.
+- [ ] Nessuna modifica a backup/restore/recovery.

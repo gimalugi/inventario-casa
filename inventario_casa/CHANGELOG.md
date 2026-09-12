@@ -1,3 +1,9 @@
+## 2.3.2
+
+- Migliorato il pulsante Scarica nella finestra Backup.
+- Data e ora dei backup mostrate in formato italiano.
+- Nessuna modifica alla logica di backup, restore, Recovery Mode o schema database.
+
 ## 2.3.1
 
 - Migliorata la grafica della finestra Backup database.
