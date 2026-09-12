@@ -1113,7 +1113,19 @@ PAGE = r"""
   --muted:#9aa6b4;--border:#313a47;--accent:#72b3f5;--danger:#ff7b7b;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+body{
+  margin:0;
+  font-family:
+    var(--ha-font-family-body,
+    var(--paper-font-common-base_-_font-family,
+    -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif));
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  background:var(--bg);
+  color:var(--text);
+}
 .wrap{max-width:1180px;margin:auto;padding:16px}
 header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
 h1{margin:0;font-size:1.5rem}.sub,.meta,.hint{color:var(--muted)}
@@ -2390,23 +2402,25 @@ textarea:focus{
 .search-clear{
   display:none;
   position:absolute;
-  right:6px;
+  right:9px;
   top:50%;
   transform:translateY(-50%);
   z-index:3;
-  width:34px;
-  min-width:34px;
-  height:34px;
-  min-height:34px;
+  width:26px;
+  min-width:26px;
+  height:30px;
+  min-height:30px;
   padding:0 !important;
   border:0 !important;
-  border-radius:50%;
+  border-radius:0 !important;
   background:transparent !important;
   color:var(--inv-muted) !important;
   box-shadow:none !important;
-  font-size:24px;
+  font-family:Arial,sans-serif;
+  font-size:22px;
   line-height:30px;
-  font-weight:500;
+  font-weight:400;
+  text-align:center;
 }
 
 .search-clear.show{
@@ -2416,7 +2430,7 @@ textarea:focus{
 .search-clear:hover,
 .search-clear:focus-visible{
   color:var(--inv-text) !important;
-  background:rgba(255,255,255,.10) !important;
+  background:transparent !important;
   outline:none;
 }
 
@@ -2505,11 +2519,13 @@ html.ha-theme-linked .search-clear{
   }
 
   .search-clear{
-    width:36px;
-    height:36px;
-    min-width:36px;
-    min-height:36px;
-    right:5px;
+    width:28px;
+    height:32px;
+    min-width:28px;
+    min-height:32px;
+    right:8px;
+    font-size:22px;
+    line-height:32px;
   }
 
   html.ha-theme-linked,
@@ -2816,7 +2832,10 @@ const homeAssistantThemeVars=[
   '--input-fill-color',
   '--lovelace-background',
   '--app-header-background-color',
-  '--sidebar-background-color'
+  '--sidebar-background-color',
+  '--ha-font-family-body',
+  '--ha-font-family-heading',
+  '--paper-font-common-base_-_font-family'
 ];
 
 function syncHomeAssistantTheme(){
