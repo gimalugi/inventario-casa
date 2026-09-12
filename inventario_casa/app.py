@@ -2286,7 +2286,7 @@ textarea:focus{
 
 /* Ricerca principale */
 .search input,
-.search button{
+.search > button{
   border:1.5px solid rgba(255,255,255,.48) !important;
 }
 
@@ -4138,3 +4138,4 @@ if(window.visualViewport){
 @app.get("/")
 def index():
     return render_template_string(PAGE)
+
