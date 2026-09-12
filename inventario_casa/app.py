@@ -1113,7 +1113,19 @@ PAGE = r"""
   --muted:#9aa6b4;--border:#313a47;--accent:#72b3f5;--danger:#ff7b7b;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+body{
+  margin:0;
+  font-family:
+    var(--ha-font-family-body,
+    var(--paper-font-common-base_-_font-family,
+    -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif));
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  background:var(--bg);
+  color:var(--text);
+}
 .wrap{max-width:1180px;margin:auto;padding:16px}
 header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
 h1{margin:0;font-size:1.5rem}.sub,.meta,.hint{color:var(--muted)}
@@ -2274,7 +2286,7 @@ textarea:focus{
 
 /* Ricerca principale */
 .search input,
-.search button{
+.search > button{
   border:1.5px solid rgba(255,255,255,.48) !important;
 }
 
@@ -2375,13 +2387,176 @@ textarea:focus{
   white-space:nowrap;
 }
 
+
+/* v2.2.1 - tema Home Assistant + cancellazione ricerca */
+.search-input-wrap{
+  position:relative;
+  min-width:0;
+  width:100%;
+}
+
+.search-input-wrap input{
+  padding-right:44px !important;
+}
+
+.search-clear{
+  display:none;
+  position:absolute;
+  right:9px;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:3;
+  width:26px;
+  min-width:26px;
+  height:30px;
+  min-height:30px;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:var(--inv-muted) !important;
+  box-shadow:none !important;
+  font-family:Arial,sans-serif;
+  font-size:22px;
+  line-height:30px;
+  font-weight:400;
+  text-align:center;
+}
+
+.search-clear.show{
+  display:block;
+}
+
+.search-clear:hover,
+.search-clear:focus-visible{
+  color:var(--inv-text) !important;
+  background:transparent !important;
+  outline:none;
+}
+
+/*
+ * Quando Inventario Casa gira dentro Home Assistant Ingress,
+ * JavaScript copia sul documento dell'app i colori del tema HA.
+ * Se non sono disponibili, resta esattamente il tema Inventario
+ * blu/viola/rosso usato fino alla 2.2.0.
+ */
+html.ha-theme-linked,
+html.ha-theme-linked body{
+  color:var(--primary-text-color,var(--inv-text)) !important;
+  background:var(
+    --lovelace-background,
+    var(--primary-background-color,var(--inv-bg-2))
+  ) !important;
+  background-attachment:fixed !important;
+  background-size:cover !important;
+  background-position:center !important;
+}
+
+html.ha-theme-linked body::before{
+  background:transparent !important;
+}
+
+html.ha-theme-linked .stat,
+html.ha-theme-linked .panel,
+html.ha-theme-linked .item,
+html.ha-theme-linked .type-card,
+html.ha-theme-linked .type-row,
+html.ha-theme-linked .dialog{
+  background:
+    color-mix(
+      in srgb,
+      var(--card-background-color,var(--secondary-background-color,#1a1f27)) 88%,
+      transparent
+    ) !important;
+}
+
+html.ha-theme-linked .item .item,
+html.ha-theme-linked .panel .item,
+html.ha-theme-linked .fieldrow,
+html.ha-theme-linked .photo{
+  background:
+    color-mix(
+      in srgb,
+      var(--secondary-background-color,#222936) 88%,
+      transparent
+    ) !important;
+}
+
+html.ha-theme-linked input,
+html.ha-theme-linked select,
+html.ha-theme-linked textarea{
+  background:var(--input-fill-color,var(--secondary-background-color,#0f1318)) !important;
+  color:var(--primary-text-color,var(--inv-text)) !important;
+}
+
+html.ha-theme-linked input::placeholder,
+html.ha-theme-linked textarea::placeholder{
+  color:var(--secondary-text-color,var(--inv-muted)) !important;
+}
+
+html.ha-theme-linked .sub,
+html.ha-theme-linked .meta,
+html.ha-theme-linked .hint,
+html.ha-theme-linked .muted{
+  color:var(--secondary-text-color,var(--inv-muted)) !important;
+}
+
+html.ha-theme-linked button.primary,
+html.ha-theme-linked .types-add-top,
+html.ha-theme-linked input:focus,
+html.ha-theme-linked select:focus,
+html.ha-theme-linked textarea:focus{
+  border-color:var(--primary-color,var(--accent-blue)) !important;
+}
+
+html.ha-theme-linked .search-clear{
+  color:var(--secondary-text-color,var(--inv-muted)) !important;
+}
+
+@media(max-width:640px){
+  .search{
+    grid-template-columns:minmax(0,1fr) 48px !important;
+  }
+
+  .search-clear{
+    width:28px;
+    height:32px;
+    min-width:28px;
+    min-height:32px;
+    right:8px;
+    font-size:22px;
+    line-height:32px;
+  }
+
+  html.ha-theme-linked,
+  html.ha-theme-linked body{
+    background:var(
+      --lovelace-background,
+      var(--primary-background-color,var(--inv-bg-2))
+    ) !important;
+    background-size:cover !important;
+    background-position:center !important;
+  }
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
   <div><h1>🏠 Inventario Casa</h1><div class="sub">Trova cosa possiedi e dove si trova.</div></div>
-  <div class="search"><input id="search" placeholder="Cerca qualsiasi cosa…"><button class="secondary" onclick="load()">🔎</button></div>
+  <div class="search">
+    <div class="search-input-wrap">
+      <input id="search" placeholder="Cerca qualsiasi cosa…" oninput="updateSearchClear()">
+      <button id="searchClear"
+              type="button"
+              class="search-clear"
+              onclick="clearSearch()"
+              aria-label="Cancella ricerca"
+              title="Cancella ricerca">×</button>
+    </div>
+    <button type="button" class="secondary" onclick="load()">🔎</button>
+  </div>
 </header>
 
 <div class="stats">
@@ -2639,6 +2814,73 @@ async function api(path,opts={}){
   const d=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d.error||'Errore');
   return d;
+}
+
+
+/* v2.2.1 - sincronizzazione colori dal tema Home Assistant.
+   Nessun polling: viene eseguita al caricamento e quando la pagina
+   torna visibile/in primo piano. */
+const homeAssistantThemeVars=[
+  '--primary-background-color',
+  '--secondary-background-color',
+  '--card-background-color',
+  '--primary-text-color',
+  '--secondary-text-color',
+  '--primary-color',
+  '--accent-color',
+  '--divider-color',
+  '--input-fill-color',
+  '--lovelace-background',
+  '--app-header-background-color',
+  '--sidebar-background-color',
+  '--ha-font-family-body',
+  '--ha-font-family-heading',
+  '--paper-font-common-base_-_font-family'
+];
+
+function syncHomeAssistantTheme(){
+  const root=document.documentElement;
+  let found=0;
+
+  try{
+    if(window.parent===window){
+      root.classList.remove('ha-theme-linked');
+      return false;
+    }
+
+    const parentRoot=window.parent.document.documentElement;
+    const parentStyle=window.parent.getComputedStyle(parentRoot);
+
+    for(const name of homeAssistantThemeVars){
+      const value=parentStyle.getPropertyValue(name).trim();
+      if(value){
+        root.style.setProperty(name,value);
+        found++;
+      }
+    }
+
+    root.classList.toggle('ha-theme-linked',found>=3);
+    return found>=3;
+  }catch(e){
+    root.classList.remove('ha-theme-linked');
+    return false;
+  }
+}
+
+function updateSearchClear(){
+  const input=$('search');
+  const clear=$('searchClear');
+  if(!input || !clear)return;
+  clear.classList.toggle('show',input.value.length>0);
+}
+
+async function clearSearch(){
+  const input=$('search');
+  if(!input)return;
+  input.value='';
+  updateSearchClear();
+  input.focus();
+  await load();
 }
 
 
@@ -3824,6 +4066,15 @@ async function saveType(){
 }
 
 $('search').addEventListener('keydown',e=>{if(e.key==='Enter')load();});
+
+syncHomeAssistantTheme();
+updateSearchClear();
+
+window.addEventListener('focus',syncHomeAssistantTheme);
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)syncHomeAssistantTheme();
+});
+
 setTypePanelCollapsed(localStorage.getItem('inventario_type_panel_collapsed')==='1');
 load();
 
@@ -3887,3 +4138,4 @@ if(window.visualViewport){
 @app.get("/")
 def index():
     return render_template_string(PAGE)
+

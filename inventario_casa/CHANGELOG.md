@@ -1,3 +1,12 @@
+## 2.2.1
+
+- Tema grafico collegato dinamicamente ai colori del tema Home Assistant quando eseguito tramite Ingress.
+- Mantiene il precedente sfondo Inventario Casa come fallback.
+- Nessun polling o attività periodica per il tema.
+- Aggiunto pulsante × nella barra di ricerca.
+- Il pulsante × appare solo quando è presente del testo e ripristina immediatamente l'inventario completo.
+- Nessuna modifica al database o ai dati dell'inventario.
+
 # CHANGELOG
 
 ## 2.1.5

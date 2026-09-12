@@ -1,3 +1,20 @@
+## v2.2.1 — Tema HA e ricerca
+
+- [ ] Avvio applicazione senza errori.
+- [ ] Database esistente aperto senza migrazioni distruttive.
+- [ ] Conteggio elementi invariato.
+- [ ] Tema Home Assistant applicato tramite Ingress.
+- [ ] Fallback grafico Inventario Casa disponibile fuori da Ingress.
+- [ ] Cambio pagina/ritorno all'app riallinea il tema HA.
+- [ ] Barra ricerca funziona con Invio e pulsante 🔎.
+- [ ] × compare solo quando la ricerca contiene testo.
+- [ ] × cancella il testo e ripristina tutto l'inventario.
+- [ ] Ricerca globale nei campi personalizzati invariata.
+- [ ] Raggruppamenti, sottogruppi e paginazione invariati.
+- [ ] Inserimento/modifica/eliminazione elementi invariati.
+- [ ] Gestione foto invariata.
+- [ ] Test mobile effettuato.
+
 # REGRESSION_CHECKLIST.md
 
 Da verificare prima di ogni rilascio di Inventario Casa:
