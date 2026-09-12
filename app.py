@@ -331,9 +331,62 @@ def append_inventory_condition(where_sql, condition):
     return " WHERE " + condition
 
 
+def inventory_sort_select_sql():
+    # Se la tipologia possiede un campo attivo chiamato "Numero",
+    # lo usa per l'ordinamento numerico. Per i tipi senza Numero
+    # il normale ordinamento alfabetico resta invariato.
+    return """
+        , (
+            SELECT cv_num.value
+            FROM item_custom_values cv_num
+            JOIN type_fields tf_num ON tf_num.id=cv_num.field_id
+            WHERE cv_num.item_id=i.id
+              AND tf_num.type_id=i.item_type_id
+              AND tf_num.active=1
+              AND LOWER(TRIM(tf_num.label))='numero'
+            ORDER BY tf_num.sort_order, tf_num.id
+            LIMIT 1
+          ) AS _sort_num
+        , (
+            SELECT cv_suffix.value
+            FROM item_custom_values cv_suffix
+            JOIN type_fields tf_suffix ON tf_suffix.id=cv_suffix.field_id
+            WHERE cv_suffix.item_id=i.id
+              AND tf_suffix.type_id=i.item_type_id
+              AND tf_suffix.active=1
+              AND LOWER(TRIM(tf_suffix.label))='suffisso numero'
+            ORDER BY tf_suffix.sort_order, tf_suffix.id
+            LIMIT 1
+          ) AS _sort_suffix
+    """
+
+
+def inventory_order_sql():
+    return """
+        ORDER BY
+          CASE
+            WHEN TRIM(COALESCE(_sort_num,''))='' THEN 1
+            ELSE 0
+          END,
+          CASE
+            WHEN TRIM(COALESCE(_sort_num,''))='' THEN 0
+            ELSE CAST(REPLACE(_sort_num, ',', '.') AS REAL)
+          END,
+          CASE
+            WHEN TRIM(COALESCE(_sort_suffix,''))='' THEN 0
+            WHEN LOWER(TRIM(_sort_suffix))='bis' THEN 1
+            ELSE 2
+          END,
+          i.name COLLATE NOCASE,
+          i.id
+    """
+
+
 def hydrate_inventory_items(conn, rows):
     items = [dict(r) for r in rows]
     for item in items:
+        item.pop("_sort_num", None)
+        item.pop("_sort_suffix", None)
         item["custom_values"] = item_custom_values(conn, item["id"])
         item["photos"] = [dict(r) for r in conn.execute(
             """SELECT id,filename,thumb_filename,COALESCE(label,'') AS label
@@ -462,11 +515,19 @@ def api_inventory_subgroup_items():
         base=" FROM items i LEFT JOIN item_custom_values cv ON cv.item_id=i.id AND cv.field_id=? "
         all_params=[fid,*params,*extra]
         total=conn.execute("SELECT COUNT(*)"+base+where_sql,all_params).fetchone()[0]
-        sql="""SELECT i.*, t.name AS type_name, t.icon AS type_icon
+        sql=(
+            """SELECT i.*, t.name AS type_name, t.icon AS type_icon
+            """
+            + inventory_sort_select_sql()
+            + """
                  FROM items i
                  LEFT JOIN item_types t ON t.id=i.item_type_id
                  LEFT JOIN item_custom_values cv ON cv.item_id=i.id AND cv.field_id=?
-              """+where_sql+" ORDER BY i.name COLLATE NOCASE, i.id LIMIT ? OFFSET ?"
+              """
+            + where_sql
+            + inventory_order_sql()
+            + " LIMIT ? OFFSET ?"
+        )
         rows=conn.execute(sql,[*all_params,page_size,offset])
         items=hydrate_inventory_items(conn,rows); nxt=offset+len(items)
         return jsonify(items=items,total=total,offset=offset,next_offset=nxt,page_size=page_size,has_more=nxt<total)
@@ -514,11 +575,19 @@ def api_inventory_items():
             "SELECT COUNT(*) FROM items i" + where_sql,
             all_params,
         ).fetchone()[0]
-        sql = """
+        sql = (
+            """
             SELECT i.*, t.name AS type_name, t.icon AS type_icon
+            """
+            + inventory_sort_select_sql()
+            + """
             FROM items i
             LEFT JOIN item_types t ON t.id=i.item_type_id
-        """ + where_sql + " ORDER BY i.name COLLATE NOCASE, i.id LIMIT ? OFFSET ?"
+            """
+            + where_sql
+            + inventory_order_sql()
+            + " LIMIT ? OFFSET ?"
+        )
         rows = conn.execute(sql, [*all_params, page_size, offset])
         items = hydrate_inventory_items(conn, rows)
         next_offset = offset + len(items)

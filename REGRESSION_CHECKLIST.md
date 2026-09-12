@@ -214,3 +214,16 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [ ] Apertura elemento funzionante.
 - [ ] Modifica elemento funzionante.
 - [ ] Database e foto invariati.
+
+
+## v2.1.5 - Ordinamento numerico
+- [ ] Fumetti ordinati 1, 2, 3 ... 9, 10, 11.
+- [ ] Nei sottogruppi l'ordinamento numerico è corretto.
+- [ ] Zagor 672 precede Zagor 672 bis.
+- [ ] Zagor 672 bis precede Zagor 673.
+- [ ] Tipologie senza campo Numero restano ordinate alfabeticamente.
+- [ ] La paginazione continua a mostrare massimo 50 elementi.
+- [ ] Successivi / Precedenti / Primi / Ultimi continuano a funzionare.
+- [ ] Ricerca globale funzionante.
+- [ ] Apertura e modifica elemento funzionanti.
+- [ ] Nessuna modifica ai dati SQLite o alle foto.

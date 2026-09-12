@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2.1.5
+- Ordinamento numerico naturale degli elementi che possiedono il campo `Numero`.
+- Corretto l'ordine 1, 10, 11, 2 in 1, 2, 3 ... 10, 11.
+- Gestito il campo `Suffisso numero`: il BIS viene mostrato dopo il numero principale.
+- Correzione applicata sia ai gruppi sia ai sottogruppi.
+- Paginazione da 50 elementi della v2.1.4 invariata.
+- Tipologie senza campo Numero continuano ad essere ordinate alfabeticamente.
+- Nessuna modifica ai dati SQLite o alle foto.
+- Nessun processo in background.
+
 ## 2.1.4
 - Paginazione reale da 50 elementi per gruppi e sottogruppi.
 - La pagina successiva sostituisce quella precedente invece di accumularla.
