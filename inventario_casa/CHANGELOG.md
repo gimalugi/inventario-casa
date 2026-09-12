@@ -1,3 +1,14 @@
+## 2.2.3
+- Introdotta la versione interna dello schema SQLite (`schema_version`).
+- Aggiunta la tabella tecnica `app_meta`.
+- Backup automatico del database prima delle migrazioni dello schema.
+- Backup salvati in `/media/inventario_casa/db_backups/`.
+- Verifica automatica del backup con `PRAGMA integrity_check`.
+- La migrazione viene interrotta se il backup non è valido.
+- Nessun backup aggiuntivo durante i normali riavvii quando lo schema è aggiornato.
+- Nessun processo in background.
+- Nessuna modifica ai dati inventariati o alle foto.
+
 ## 2.2.2
 - Corretto su smartphone il campo Nome dei campi personalizzati nell'editor Tipologie.
 - Il pulsante microfono non occupa più tutta la larghezza e non nasconde il nome del campo.

@@ -14,6 +14,9 @@ APP_NAME = "Inventario Casa"
 DATA_DIR = Path("/data/inventario_casa")
 DB_PATH = DATA_DIR / "inventario.db"
 MEDIA_DIR = Path("/media/inventario_casa/oggetti")
+DB_BACKUP_DIR = Path("/media/inventario_casa/db_backups")
+
+CURRENT_SCHEMA_VERSION = 1
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
@@ -30,6 +33,97 @@ def db():
 
 def table_columns(conn, table):
     return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def read_schema_version():
+    if not DB_PATH.exists():
+        return 0
+
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        exists = conn.execute(
+            "SELECT 1 FROM sqlite_master "
+            "WHERE type='table' AND name='app_meta'"
+        ).fetchone()
+
+        if not exists:
+            return 0
+
+        row = conn.execute(
+            "SELECT value FROM app_meta WHERE key='schema_version'"
+        ).fetchone()
+
+        if not row:
+            return 0
+
+        try:
+            return int(row[0])
+        except (TypeError, ValueError):
+            return 0
+    finally:
+        conn.close()
+
+
+def create_pre_migration_backup(from_version, to_version):
+    DB_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    backup_path = DB_BACKUP_DIR / (
+        f"inventario_pre_schema_{from_version}_to_{to_version}_{stamp}.db"
+    )
+
+    source = sqlite3.connect(DB_PATH)
+    target = sqlite3.connect(backup_path)
+
+    try:
+        source.backup(target)
+        target.commit()
+
+        result = target.execute("PRAGMA integrity_check").fetchone()
+        integrity = result[0] if result else ""
+
+        if integrity != "ok":
+            raise RuntimeError(
+                f"Backup DB non valido: integrity_check={integrity!r}"
+            )
+    except Exception:
+        target.close()
+        source.close()
+
+        try:
+            backup_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+        raise
+    else:
+        target.close()
+        source.close()
+
+    print(
+        f"[Inventario Casa] Backup pre-migrazione creato: {backup_path}"
+    )
+
+    return backup_path
+
+
+def write_schema_version(conn, version):
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS app_meta (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+        """
+    )
+
+    conn.execute(
+        """
+        INSERT OR REPLACE INTO app_meta(key,value)
+        VALUES('schema_version', ?)
+        """,
+        (str(version),),
+    )
 
 
 def ensure_column(conn, table, col, declaration):
@@ -54,6 +148,22 @@ def ensure_type_field(conn, type_name, label, field_type="text", required=0, opt
 
 
 def init_db():
+    previous_schema_version = read_schema_version()
+
+    if (
+        DB_PATH.exists()
+        and previous_schema_version < CURRENT_SCHEMA_VERSION
+    ):
+        print(
+            "[Inventario Casa] Migrazione schema richiesta: "
+            f"{previous_schema_version} -> {CURRENT_SCHEMA_VERSION}"
+        )
+
+        create_pre_migration_backup(
+            previous_schema_version,
+            CURRENT_SCHEMA_VERSION,
+        )
+
     with db() as conn:
         conn.executescript(
             """
@@ -182,6 +292,13 @@ def init_db():
             ensure_type_field(conn, "Fumetto", *f, sort_order=idx)
         for idx, f in enumerate(rivista):
             ensure_type_field(conn, "Rivista", *f, sort_order=idx)
+
+        write_schema_version(conn, CURRENT_SCHEMA_VERSION)
+
+        print(
+            "[Inventario Casa] Schema database verificato: "
+            f"versione {CURRENT_SCHEMA_VERSION}"
+        )
 
 
 init_db()

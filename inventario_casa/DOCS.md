@@ -121,3 +121,27 @@ Questa versione introduce:
 - pulsante **×** per cancellare rapidamente la ricerca;
 - font maggiormente coerente con l'interfaccia Home Assistant;
 - nessuna modifica al database o ai dati dell'inventario.
+
+
+## Sicurezza database e migrazioni
+
+Il database principale di Inventario Casa è conservato in:
+
+`/data/inventario_casa/inventario.db`
+
+La versione dello schema SQLite viene registrata nella tabella tecnica
+`app_meta`.
+
+Quando un aggiornamento richiede una nuova versione dello schema, prima
+della migrazione viene creato automaticamente un backup SQLite consistente in:
+
+`/media/inventario_casa/db_backups/`
+
+Il backup viene controllato con `PRAGMA integrity_check`. Se il controllo
+non restituisce `ok`, la migrazione viene interrotta.
+
+Quando lo schema è già aggiornato, un normale riavvio dell'App non crea
+nuovi backup.
+
+Inventario Casa non utilizza processi periodici, scheduler o attività di
+monitoraggio in background.

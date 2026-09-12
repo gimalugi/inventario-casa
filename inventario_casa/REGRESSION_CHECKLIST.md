@@ -257,3 +257,17 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [ ] I pulsanti Annulla/Chiudi esistenti continuano a funzionare.
 - [ ] Layout desktop invariato.
 - [ ] Database e foto invariati.
+
+
+## v2.2.3 - Sicurezza database
+- [ ] Database esistente rilevato correttamente.
+- [ ] Migrazione iniziale schema 0 → 1 crea un backup.
+- [ ] Backup salvato in `/media/inventario_casa/db_backups/`.
+- [ ] `PRAGMA integrity_check` del backup restituisce `ok`.
+- [ ] Tabella `app_meta` presente.
+- [ ] `schema_version` impostato a `1`.
+- [ ] Il secondo riavvio non crea un nuovo backup.
+- [ ] Numero elementi invariato.
+- [ ] Numero tipologie invariato.
+- [ ] Foto esistenti ancora accessibili.
+- [ ] Nessun processo in background.
