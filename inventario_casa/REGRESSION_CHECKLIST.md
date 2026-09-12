@@ -271,3 +271,23 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [ ] Numero tipologie invariato.
 - [ ] Foto esistenti ancora accessibili.
 - [ ] Nessun processo in background.
+
+
+## v2.3.0 - Backup & Recovery
+- [ ] Versione App 2.3.0.
+- [ ] Schema DB resta versione 1.
+- [ ] 929 elementi invariati sul database di test reale.
+- [ ] 9 tipologie invariate.
+- [ ] 2 foto registrate ancora accessibili.
+- [ ] Apertura sezione Backup database.
+- [ ] Elenco backup esistenti corretto.
+- [ ] Integrity check backup esistenti = ok.
+- [ ] Creazione backup manuale.
+- [ ] Download backup.
+- [ ] Ripristino richiede doppia conferma.
+- [ ] Prima del restore viene creato backup `inventario_pre_restore`.
+- [ ] Integrity check dopo restore = ok.
+- [ ] Secondo riavvio non crea backup non richiesti.
+- [ ] Simulazione errore init mostra la modalità Recovery.
+- [ ] Recovery elenca i backup anche con DB principale non utilizzabile.
+- [ ] Nessun processo in background.

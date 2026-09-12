@@ -145,3 +145,38 @@ nuovi backup.
 
 Inventario Casa non utilizza processi periodici, scheduler o attività di
 monitoraggio in background.
+
+
+## Backup & Recovery
+
+Dalla versione 2.3.0 Inventario Casa dispone di una gestione dei backup
+direttamente dall'interfaccia.
+
+I backup sono salvati in:
+
+`/media/inventario_casa/db_backups/`
+
+Da Backup database è possibile:
+
+- creare manualmente un backup;
+- controllarne data e dimensione;
+- verificarne l'integrità;
+- scaricarlo;
+- ripristinarlo.
+
+Prima di un ripristino l'App prova a creare automaticamente una copia
+del database corrente con prefisso `inventario_pre_restore`.
+
+Il backup selezionato viene verificato con `PRAGMA integrity_check`
+prima del restore. Anche il database risultante viene verificato dopo
+il ripristino.
+
+### Modalità Recovery
+
+Se l'inizializzazione del database o una migrazione impediscono il normale
+avvio, il server web dell'App rimane disponibile in modalità Recovery.
+
+La schermata Recovery permette di vedere, scaricare e ripristinare i backup
+disponibili senza usare Docker, SQLite o la CLI di Home Assistant.
+
+Il sistema non utilizza servizi periodici o processi in background.

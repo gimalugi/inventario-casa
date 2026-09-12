@@ -7,6 +7,7 @@ from pyzbar.pyzbar import decode as zbar_decode
 import uuid
 import json
 import re
+import threading
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -17,6 +18,9 @@ MEDIA_DIR = Path("/media/inventario_casa/oggetti")
 DB_BACKUP_DIR = Path("/media/inventario_casa/db_backups")
 
 CURRENT_SCHEMA_VERSION = 1
+
+DB_MAINTENANCE_LOCK = threading.Lock()
+STARTUP_DB_ERROR = None
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
@@ -105,6 +109,302 @@ def create_pre_migration_backup(from_version, to_version):
     )
 
     return backup_path
+
+
+
+def inspect_database_file(path):
+    """Controlla integrità e informazioni essenziali di un DB SQLite."""
+    path = Path(path)
+
+    result = {
+        "valid": False,
+        "integrity": "",
+        "items": None,
+        "types": None,
+        "photos": None,
+        "schema_version": None,
+    }
+
+    if not path.exists():
+        result["integrity"] = "file non trovato"
+        return result
+
+    conn = None
+    try:
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+
+        row = conn.execute("PRAGMA integrity_check").fetchone()
+        integrity = row[0] if row else ""
+
+        result["integrity"] = integrity
+        result["valid"] = integrity == "ok"
+
+        if not result["valid"]:
+            return result
+
+        tables = {
+            r[0]
+            for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+
+        if "items" in tables:
+            result["items"] = conn.execute(
+                "SELECT COUNT(*) FROM items"
+            ).fetchone()[0]
+
+        if "item_types" in tables:
+            result["types"] = conn.execute(
+                "SELECT COUNT(*) FROM item_types"
+            ).fetchone()[0]
+
+        if "item_photos" in tables:
+            result["photos"] = conn.execute(
+                "SELECT COUNT(*) FROM item_photos"
+            ).fetchone()[0]
+
+        if "app_meta" in tables:
+            row = conn.execute(
+                "SELECT value FROM app_meta WHERE key='schema_version'"
+            ).fetchone()
+            if row:
+                try:
+                    result["schema_version"] = int(row[0])
+                except (TypeError, ValueError):
+                    result["schema_version"] = row[0]
+        else:
+            result["schema_version"] = 0
+
+        return result
+
+    except Exception as exc:
+        result["integrity"] = str(exc)
+        return result
+
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def backup_path_from_name(filename):
+    """Accetta esclusivamente file .db presenti nella cartella backup."""
+    filename = Path(str(filename or "")).name
+
+    if not filename or not filename.endswith(".db"):
+        raise ValueError("Nome backup non valido")
+
+    path = DB_BACKUP_DIR / filename
+
+    try:
+        path.resolve().relative_to(DB_BACKUP_DIR.resolve())
+    except ValueError:
+        raise ValueError("Percorso backup non valido")
+
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError("Backup non trovato")
+
+    return path
+
+
+def create_database_backup(prefix="inventario_manuale", verify=True):
+    """Crea una copia SQLite consistente del database corrente."""
+    if not DB_PATH.exists():
+        raise FileNotFoundError("Database principale non trovato")
+
+    DB_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    backup_path = DB_BACKUP_DIR / f"{prefix}_{stamp}.db"
+
+    source = sqlite3.connect(DB_PATH)
+    target = sqlite3.connect(backup_path)
+
+    try:
+        source.backup(target)
+        target.commit()
+    finally:
+        target.close()
+        source.close()
+
+    if verify:
+        check = inspect_database_file(backup_path)
+        if not check["valid"]:
+            try:
+                backup_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            raise RuntimeError(
+                "Il backup creato non supera il controllo di integrità: "
+                + str(check["integrity"])
+            )
+
+    return backup_path
+
+
+def list_database_backups():
+    DB_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+    rows = []
+
+    for path in sorted(
+        DB_BACKUP_DIR.glob("*.db"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    ):
+        stat = path.stat()
+        check = inspect_database_file(path)
+
+        rows.append({
+            "filename": path.name,
+            "size": stat.st_size,
+            "modified": datetime.fromtimestamp(
+                stat.st_mtime
+            ).isoformat(timespec="seconds"),
+            **check,
+        })
+
+    return rows
+
+
+def restore_database_backup(filename):
+    """
+    Ripristina un backup verificato.
+
+    Il backup viene prima copiato in un database SQLite temporaneo,
+    verificato e solo dopo sostituisce atomicamente il database corrente.
+    Questo permette il recovery anche quando il DB corrente è corrotto.
+    """
+    global STARTUP_DB_ERROR
+
+    with DB_MAINTENANCE_LOCK:
+        backup_path = backup_path_from_name(filename)
+
+        # 1. Verifica preventiva del backup scelto.
+        backup_info = inspect_database_file(backup_path)
+
+        if backup_info.get("integrity") != "ok":
+            raise RuntimeError(
+                "Il backup selezionato non supera il controllo di integrità"
+            )
+
+        safety_backup = None
+        safety_warning = None
+
+        # 2. Prova a salvare il DB corrente prima del restore.
+        #
+        # In Recovery Mode il database corrente può essere illeggibile:
+        # in quel caso il mancato safety backup NON deve impedire il
+        # ripristino di un backup valido.
+        if DB_PATH.exists():
+            try:
+                safety_backup = create_database_backup(
+                    prefix="inventario_pre_restore",
+                    verify=True,
+                )
+            except Exception as exc:
+                safety_warning = (
+                    "Impossibile creare il backup di sicurezza del "
+                    f"database corrente: {type(exc).__name__}: {exc}"
+                )
+                print(
+                    "[Inventario Casa] ATTENZIONE: "
+                    + safety_warning
+                )
+
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        restore_tmp = DATA_DIR / f".inventario_restore_{stamp}.db"
+
+        source = None
+        target = None
+
+        try:
+            # 3. Ricostruisce il backup in un NUOVO DB.
+            #
+            # Non utilizziamo DB_PATH come destinazione perché potrebbe
+            # essere un file SQLite corrotto.
+            source = sqlite3.connect(str(backup_path))
+            target = sqlite3.connect(str(restore_tmp))
+
+            source.backup(target)
+            target.commit()
+
+            target.close()
+            target = None
+
+            source.close()
+            source = None
+
+            # 4. Verifica il DB temporaneo PRIMA di sostituire quello attivo.
+            restored_info = inspect_database_file(restore_tmp)
+
+            if restored_info.get("integrity") != "ok":
+                raise RuntimeError(
+                    "Il database ripristinato non supera "
+                    "il controllo di integrità"
+                )
+
+            # 5. Elimina eventuali WAL/SHM del vecchio database.
+            for suffix in ("-wal", "-shm"):
+                sidecar = Path(str(DB_PATH) + suffix)
+                try:
+                    sidecar.unlink()
+                except FileNotFoundError:
+                    pass
+
+            # 6. Sostituzione atomica del database corrente.
+            restore_tmp.replace(DB_PATH)
+
+            # 7. Esegue eventuali migrazioni necessarie.
+            init_db()
+
+            # 8. Verifica finale dopo init/migrazioni.
+            final_info = inspect_database_file(DB_PATH)
+
+            if final_info.get("integrity") != "ok":
+                raise RuntimeError(
+                    "Il database non supera il controllo "
+                    "di integrità dopo il ripristino"
+                )
+
+            STARTUP_DB_ERROR = None
+
+            return {
+                "ok": True,
+                "filename": backup_path.name,
+                "safety_backup": (
+                    safety_backup.name
+                    if safety_backup is not None
+                    else None
+                ),
+                "safety_warning": safety_warning,
+                "database": final_info,
+            }
+
+        except Exception as exc:
+            STARTUP_DB_ERROR = f"{type(exc).__name__}: {exc}"
+
+            print(
+                "[Inventario Casa] ERRORE ripristino database: "
+                + STARTUP_DB_ERROR
+            )
+
+            raise
+
+        finally:
+            if target is not None:
+                target.close()
+
+            if source is not None:
+                source.close()
+
+            if restore_tmp.exists():
+                try:
+                    restore_tmp.unlink()
+                except Exception:
+                    pass
 
 
 def write_schema_version(conn, version):
@@ -301,7 +601,15 @@ def init_db():
         )
 
 
-init_db()
+try:
+    init_db()
+except Exception as exc:
+    STARTUP_DB_ERROR = f"{type(exc).__name__}: {exc}"
+    print(
+        "[Inventario Casa] ERRORE inizializzazione database. "
+        "Avvio modalità Recovery: "
+        + STARTUP_DB_ERROR
+    )
 
 
 def type_rows(conn):
@@ -1211,9 +1519,299 @@ def api_delete_photo(photo_id):
     return jsonify(ok=True)
 
 
+
+@app.get("/api/backups")
+def api_backups():
+    return jsonify(
+        backups=list_database_backups(),
+        startup_error=STARTUP_DB_ERROR,
+        current_database=inspect_database_file(DB_PATH),
+    )
+
+
+@app.post("/api/backups/create")
+def api_create_backup():
+    try:
+        with DB_MAINTENANCE_LOCK:
+            path = create_database_backup("inventario_manuale")
+
+        return jsonify(
+            ok=True,
+            filename=path.name,
+            database=inspect_database_file(path),
+        ), 201
+
+    except Exception as exc:
+        return jsonify(error=str(exc)), 500
+
+
+@app.post("/api/backups/restore")
+def api_restore_backup():
+    data = request.get_json(silent=True) or {}
+    filename = data.get("filename")
+
+    try:
+        with DB_MAINTENANCE_LOCK:
+            result = restore_database_backup(filename)
+
+        return jsonify(ok=True, **result)
+
+    except FileNotFoundError as exc:
+        return jsonify(error=str(exc)), 404
+
+    except ValueError as exc:
+        return jsonify(error=str(exc)), 400
+
+    except Exception as exc:
+        return jsonify(
+            error=str(exc),
+            startup_error=STARTUP_DB_ERROR,
+        ), 500
+
+
+@app.get("/api/backups/download/<path:filename>")
+def api_download_backup(filename):
+    try:
+        path = backup_path_from_name(filename)
+    except (ValueError, FileNotFoundError):
+        return jsonify(error="Backup non trovato"), 404
+
+    return send_from_directory(
+        DB_BACKUP_DIR,
+        path.name,
+        as_attachment=True,
+    )
+
+
 @app.get("/files/<path:filename>")
 def media_file(filename):
     return send_from_directory(MEDIA_DIR, filename)
+
+
+RECOVERY_PAGE = r"""
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventario Casa - Recovery</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  color:#f7f9fb;
+  background:
+    radial-gradient(circle at 10% 5%,#185b78 0%,transparent 38%),
+    radial-gradient(circle at 90% 10%,#8e3348 0%,transparent 40%),
+    linear-gradient(145deg,#123f58,#24204c 48%,#8e3348);
+  padding:18px;
+}
+.wrap{max-width:720px;margin:auto}
+.card{
+  margin-bottom:14px;
+  padding:16px;
+  border-radius:16px;
+  border:1.5px solid rgba(255,255,255,.42);
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(12px);
+}
+h1,h2{margin-top:0}
+.error{
+  white-space:pre-wrap;
+  word-break:break-word;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ff7b7b;
+  background:rgba(120,20,30,.22);
+}
+.backup{
+  padding:12px;
+  border:1px solid rgba(255,255,255,.32);
+  border-radius:12px;
+  margin:8px 0;
+  background:rgba(0,0,0,.15);
+}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+button,a.btn{
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.38);
+  padding:9px 12px;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+  text-decoration:none;
+  background:#55aef7;
+  color:#07111c;
+}
+.secondary{background:rgba(255,255,255,.12)!important;color:#fff!important}
+.ok{color:#72e49d}.bad{color:#ff9b9b}.muted{color:#c7ced7}
+/* v2.3.0 - Backup & Recovery */
+.backup-panel-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+.backup-panel-head h2{margin:0!important}
+.backup-list{display:grid;gap:9px;margin-top:12px}
+.backup-row{
+  padding:11px;
+  border:1.5px solid rgba(255,255,255,.38);
+  border-radius:12px;
+  background:rgba(0,0,0,.14);
+}
+.backup-row-name{
+  font-weight:800;
+  overflow-wrap:anywhere;
+}
+.backup-row-meta{
+  margin-top:3px;
+  font-size:.78rem;
+  color:var(--inv-muted,var(--muted));
+}
+.backup-row-status{
+  margin-top:5px;
+  font-size:.82rem;
+}
+.backup-row-status.ok{color:#72e49d}
+.backup-row-status.bad{color:#ff9b9b}
+.backup-row-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin-top:9px;
+}
+.backup-row-actions button,
+.backup-row-actions a{
+  flex:1;
+  min-width:110px;
+}
+.backup-info{
+  margin:10px 0;
+  padding:10px;
+  border:1.5px solid rgba(79,176,255,.40);
+  border-radius:11px;
+  background:rgba(79,176,255,.07);
+}
+@media(max-width:640px){
+  .backup-row-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>🛟 Inventario Casa - Recovery</h1>
+    <p>
+      Inventario Casa non è riuscito ad aprire o aggiornare correttamente
+      il database. I backup restano disponibili.
+    </p>
+    <div class="error">{{ startup_error }}</div>
+  </div>
+
+  <div class="card">
+    <h2>Backup disponibili</h2>
+    <div id="backups">Caricamento…</div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'')
+ .replaceAll('&','&amp;')
+ .replaceAll('<','&lt;')
+ .replaceAll('>','&gt;')
+ .replaceAll('"','&quot;');
+
+function bytes(n){
+  n=Number(n||0);
+  if(n<1024)return n+' B';
+  if(n<1024*1024)return (n/1024).toFixed(1)+' KB';
+  return (n/1024/1024).toFixed(1)+' MB';
+}
+
+async function loadBackups(){
+  try{
+    const r=await fetch('api/backups');
+    const d=await r.json();
+    const rows=d.backups||[];
+
+    $('backups').innerHTML=rows.length
+      ? rows.map(b=>`
+        <div class="backup">
+          <strong>${esc(b.filename)}</strong><br>
+          <span class="muted">${esc(b.modified)} · ${bytes(b.size)}</span><br>
+          <span class="${b.valid?'ok':'bad'}">
+            ${b.valid?'✓ Backup integro':'⚠ '+esc(b.integrity)}
+          </span>
+          ${b.items!==null?`<div class="muted">${b.items} elementi · ${b.types??'?'} tipologie · ${b.photos??'?'} foto</div>`:''}
+          <div class="actions">
+            <a class="btn secondary"
+               href="api/backups/download/${encodeURIComponent(b.filename)}">
+               Scarica
+            </a>
+            ${b.valid?`
+              <button onclick="restoreBackup('${esc(b.filename)}')">
+                Ripristina
+              </button>`:''}
+          </div>
+        </div>
+      `).join('')
+      : '<div class="muted">Nessun backup disponibile.</div>';
+
+  }catch(e){
+    $('backups').textContent='Errore: '+e.message;
+  }
+}
+
+async function restoreBackup(name){
+  if(!confirm(
+    'Ripristinare questo backup?\\n\\n'+name+
+    '\\n\\nIl database corrente verrà sostituito.'
+  ))return;
+
+  const confirmText=prompt(
+    'Per confermare il ripristino scrivi:\\n\\nRIPRISTINA'
+  );
+
+  if(confirmText!=='RIPRISTINA')return;
+
+  const r=await fetch('api/backups/restore',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({filename:name})
+  });
+
+  const d=await r.json().catch(()=>({}));
+
+  if(!r.ok){
+    alert(d.error||'Ripristino non riuscito');
+    await loadBackups();
+    return;
+  }
+
+  alert(
+    'Backup ripristinato correttamente.\\n\\n'+
+    'Elementi: '+(d.database?.items??'?')+'\\n'+
+    'Integrity check: '+(d.database?.integrity??'?')
+  );
+
+  location.reload();
+}
+
+loadBackups();
+</script>
+</body>
+</html>
+"""
 
 
 PAGE = r"""
@@ -2860,6 +3458,18 @@ html.ha-theme-linked .search-clear{
       <button class="type-add" onclick="openTypeDialog()">➕ Nuova tipologia</button>
     </div>
   </div>
+
+  <div class="panel">
+    <div class="backup-panel-head">
+      <h2>🛟 Backup database</h2>
+      <button type="button"
+              class="secondary small"
+              onclick="openBackupDialog()">Gestisci</button>
+    </div>
+    <div class="hint" style="margin-top:8px">
+      Backup e ripristino dell'archivio Inventario Casa.
+    </div>
+  </div>
 </aside>
 </div>
 </div>
@@ -2868,6 +3478,43 @@ html.ha-theme-linked .search-clear{
 <datalist id="furns"></datalist>
 <datalist id="shelves"></datalist>
 <datalist id="containers"></datalist>
+
+<div id="backupDlg"
+     class="dialogbg"
+     onclick="if(event.target===this) closeBackupDialog()">
+  <div class="dialog">
+    <button type="button"
+            class="dialog-close-btn"
+            onclick="closeBackupDialog()"
+            aria-label="Chiudi"
+            title="Chiudi">×</button>
+
+    <h2>🛟 Backup database</h2>
+
+    <div class="backup-info">
+      I backup sono salvati in
+      <strong>/media/inventario_casa/db_backups/</strong>
+      e restano disponibili anche dopo la disinstallazione dell'App.
+    </div>
+
+    <button type="button"
+            onclick="createManualBackup()">
+      ＋ Crea backup adesso
+    </button>
+
+    <div id="backupList"
+         class="backup-list">
+      Caricamento…
+    </div>
+
+    <div class="savebar">
+      <button class="secondary"
+              onclick="closeBackupDialog()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+
 
 <div id="typeDlg" class="dialogbg">
   <div class="dialog">
@@ -4270,6 +4917,149 @@ async function saveType(){
   }catch(e){alert(e.message);}
 }
 
+
+function backupBytes(n){
+  n=Number(n||0);
+  if(n<1024)return n+' B';
+  if(n<1024*1024)return (n/1024).toFixed(1)+' KB';
+  return (n/1024/1024).toFixed(1)+' MB';
+}
+
+async function openBackupDialog(){
+  $('backupDlg').classList.add('show');
+  await loadBackupList();
+}
+
+function closeBackupDialog(){
+  $('backupDlg').classList.remove('show');
+}
+
+async function loadBackupList(){
+  const box=$('backupList');
+  box.innerHTML='<div class="hint">Caricamento backup…</div>';
+
+  try{
+    const data=await api('api/backups');
+    const rows=data.backups||[];
+
+    box.innerHTML=rows.length
+      ? rows.map(b=>`
+        <div class="backup-row">
+          <div class="backup-row-name">${esc(b.filename)}</div>
+
+          <div class="backup-row-meta">
+            ${esc(b.modified)} · ${backupBytes(b.size)}
+            ${b.schema_version!==null && b.schema_version!==undefined
+              ? ` · schema ${esc(b.schema_version)}`
+              : ''}
+          </div>
+
+          <div class="backup-row-status ${b.valid?'ok':'bad'}">
+            ${b.valid
+              ? `✓ Integro${b.items!==null?` · ${b.items} elementi`:''}`
+              : `⚠ ${esc(b.integrity||'Backup non valido')}`}
+          </div>
+
+          <div class="backup-row-actions">
+            <a class="secondary"
+               style="display:flex;align-items:center;justify-content:center;text-decoration:none;border-radius:10px;padding:8px"
+               href="api/backups/download/${encodeURIComponent(b.filename)}">
+              ⬇ Scarica
+            </a>
+
+            ${b.valid?`
+              <button type="button"
+                      onclick="restoreBackupFromUi('${esc(b.filename)}')">
+                ↩ Ripristina
+              </button>
+            `:''}
+          </div>
+        </div>
+      `).join('')
+      : '<div class="empty">Nessun backup disponibile.</div>';
+
+  }catch(e){
+    box.innerHTML=`<div class="notice">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+async function createManualBackup(){
+  if(!confirm(
+    'Creare adesso una copia di sicurezza del database?'
+  ))return;
+
+  try{
+    const data=await api('api/backups/create',{
+      method:'POST',
+      body:JSON.stringify({})
+    });
+
+    alert(
+      'Backup creato correttamente:\\n\\n'+data.filename
+    );
+
+    await loadBackupList();
+
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function restoreBackupFromUi(filename){
+  if(!confirm(
+    'Ripristinare questo backup?\\n\\n'+filename+
+    '\\n\\nIl database attuale verrà sostituito. '+
+    'Prima del ripristino Inventario Casa proverà a crearne '+
+    'un ulteriore backup di sicurezza.'
+  ))return;
+
+  const confirmation=prompt(
+    'Per confermare scrivi esattamente:\\n\\nRIPRISTINA'
+  );
+
+  if(confirmation!=='RIPRISTINA'){
+    alert('Ripristino annullato.');
+    return;
+  }
+
+  try{
+    const data=await api('api/backups/restore',{
+      method:'POST',
+      body:JSON.stringify({filename})
+    });
+
+    let message=
+      'Database ripristinato correttamente.\\n\\n'+
+      'Elementi: '+(data.database?.items??'?')+'\\n'+
+      'Tipologie: '+(data.database?.types??'?')+'\\n'+
+      'Foto: '+(data.database?.photos??'?')+'\\n'+
+      'Integrity check: '+(data.database?.integrity??'?');
+
+    if(data.safety_backup){
+      message+='\\n\\nBackup del DB precedente:\\n'+
+        data.safety_backup;
+    }
+
+    if(data.safety_warning){
+      message+='\\n\\nNota: non è stato possibile verificare '+
+        'il DB precedente:\\n'+data.safety_warning;
+    }
+
+    alert(message);
+
+    closeBackupDialog();
+    await load();
+
+  }catch(e){
+    alert(
+      'Ripristino non riuscito:\\n\\n'+e.message+
+      '\\n\\nIl backup selezionato non viene eliminato.'
+    );
+    await loadBackupList();
+  }
+}
+
+
 $('search').addEventListener('keydown',e=>{if(e.key==='Enter')load();});
 
 syncHomeAssistantTheme();
@@ -4342,5 +5132,10 @@ if(window.visualViewport){
 
 @app.get("/")
 def index():
+    if STARTUP_DB_ERROR:
+        return render_template_string(
+            RECOVERY_PAGE,
+            startup_error=STARTUP_DB_ERROR,
+        )
     return render_template_string(PAGE)
 

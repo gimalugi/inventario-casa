@@ -1,3 +1,16 @@
+## 2.3.0
+- Nuova sezione Backup database nell'interfaccia.
+- Creazione manuale di backup SQLite consistenti.
+- Elenco backup con data, dimensione, schema e stato di integrità.
+- Download dei backup dall'interfaccia.
+- Ripristino guidato con doppia conferma.
+- Backup automatico del database corrente prima di un restore.
+- Verifica `PRAGMA integrity_check` prima e dopo il ripristino.
+- Modalità Recovery se l'inizializzazione o una migrazione DB falliscono.
+- In Recovery i backup restano consultabili, scaricabili e ripristinabili.
+- Nessun processo, scheduler o controllo periodico in background.
+- `CURRENT_SCHEMA_VERSION` resta 1: questa release non modifica lo schema dati.
+
 ## 2.2.3
 - Introdotta la versione interna dello schema SQLite (`schema_version`).
 - Aggiunta la tabella tecnica `app_meta`.

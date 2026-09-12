@@ -19,14 +19,17 @@ mkdir -p "${MEDIA_DIR}"
 
 cd /app
 
-# L'import dell'app esegue init_db(): crea un database nuovo quando manca
-# oppure applica esclusivamente le migrazioni additive previste.
-python3 -c 'import app'
-
-if [ "${FIRST_START}" -eq 1 ]; then
-    bashio::log.info "[Inventario Casa] Database inizializzato correttamente."
+# L'import dell'app verifica il database.
+# Se una migrazione fallisce, Flask viene comunque avviato in modalità Recovery.
+if python3 -c 'import app,sys; sys.exit(1 if app.STARTUP_DB_ERROR else 0)'; then
+    if [ "${FIRST_START}" -eq 1 ]; then
+        bashio::log.info "[Inventario Casa] Database inizializzato correttamente."
+    else
+        bashio::log.info "[Inventario Casa] Verifica struttura e migrazioni completata."
+    fi
 else
-    bashio::log.info "[Inventario Casa] Verifica struttura e migrazioni completata."
+    bashio::log.warning "[Inventario Casa] Problema database rilevato."
+    bashio::log.warning "[Inventario Casa] Avvio interfaccia in modalità Recovery."
 fi
 
 exec gunicorn \
