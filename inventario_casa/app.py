@@ -3338,6 +3338,176 @@ html.ha-theme-linked .search-clear{
   }
 }
 
+/* v2.3.1 - Backup UI polish */
+#backupDlg .dialog{
+  width:min(760px,calc(100vw - 24px));
+  max-height:88vh;
+  overflow:auto;
+}
+#backupDlg h2{
+  margin:0 44px 14px 0;
+}
+#backupDlg .backup-info{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin:0 0 14px;
+  padding:12px 14px;
+  border:1.5px solid rgba(79,176,255,.42);
+  border-radius:14px;
+  background:rgba(79,176,255,.08);
+}
+#backupDlg .backup-info-icon{
+  flex:0 0 auto;
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:rgba(79,176,255,.18);
+  border:1px solid rgba(79,176,255,.42);
+  font-weight:900;
+}
+#backupDlg .backup-info code{
+  display:inline-block;
+  margin-top:4px;
+  padding:2px 6px;
+  border-radius:7px;
+  background:rgba(0,0,0,.22);
+  color:#d8ecff;
+  overflow-wrap:anywhere;
+}
+#backupDlg .backup-create-btn{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+  padding:13px 14px;
+  border-radius:14px;
+  margin-bottom:16px;
+}
+#backupDlg .backup-create-icon{
+  font-size:1.45rem;
+  line-height:1;
+}
+#backupDlg .backup-create-btn span:last-child{
+  display:flex;
+  flex-direction:column;
+}
+#backupDlg .backup-create-btn small{
+  margin-top:2px;
+  opacity:.76;
+  font-weight:500;
+}
+#backupDlg .backup-list-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:4px 0 9px;
+}
+#backupDlg .backup-count{
+  min-width:28px;
+  height:28px;
+  padding:0 8px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.24);
+  font-size:.78rem;
+  font-weight:800;
+}
+#backupDlg .backup-row{
+  position:relative;
+  padding:14px;
+  border:1.5px solid rgba(255,255,255,.30);
+  border-radius:15px;
+  background:rgba(255,255,255,.045);
+  box-shadow:0 8px 24px rgba(0,0,0,.14);
+}
+#backupDlg .backup-row-name{
+  font-size:.92rem;
+  line-height:1.3;
+  font-weight:800;
+  color:#f4f7fb;
+  overflow-wrap:anywhere;
+}
+#backupDlg .backup-row-meta{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:9px;
+  font-size:.76rem;
+  color:var(--inv-muted,var(--muted));
+}
+#backupDlg .backup-row-meta span{
+  padding:4px 7px;
+  border-radius:999px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);
+}
+#backupDlg .backup-row-status{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:9px;
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:800;
+}
+#backupDlg .backup-row-status.ok{
+  color:#7ce6a4;
+  background:rgba(89,210,137,.10);
+  border:1px solid rgba(89,210,137,.28);
+}
+#backupDlg .backup-row-status.bad{
+  color:#ff9b9b;
+  background:rgba(255,95,95,.09);
+  border:1px solid rgba(255,95,95,.25);
+}
+#backupDlg .backup-row-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+#backupDlg .backup-row-actions a,
+#backupDlg .backup-row-actions button{
+  min-width:0;
+  width:100%;
+  min-height:40px;
+  border-radius:11px;
+}
+#backupDlg .backup-download{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  padding:8px 10px;
+}
+#backupDlg .backup-restore{
+  background:rgba(255,173,66,.14);
+  color:#ffd59a;
+  border:1px solid rgba(255,173,66,.34);
+}
+@media(max-width:640px){
+  #backupDlg .dialog{
+    width:calc(100vw - 14px);
+    max-height:94vh;
+    border-radius:16px;
+    padding:16px 14px;
+  }
+  #backupDlg .backup-row-actions{
+    grid-template-columns:1fr;
+  }
+  #backupDlg .backup-info{
+    padding:11px 12px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3492,15 +3662,29 @@ html.ha-theme-linked .search-clear{
     <h2>🛟 Backup database</h2>
 
     <div class="backup-info">
-      I backup sono salvati in
-      <strong>/media/inventario_casa/db_backups/</strong>
-      e restano disponibili anche dopo la disinstallazione dell'App.
+      <div class="backup-info-icon">ℹ️</div>
+      <div>
+        <strong>Backup sicuri e persistenti</strong><br>
+        I file vengono conservati in
+        <code>/media/inventario_casa/db_backups/</code>
+        e restano disponibili anche dopo la disinstallazione dell'App.
+      </div>
     </div>
 
     <button type="button"
+            class="backup-create-btn"
             onclick="createManualBackup()">
-      ＋ Crea backup adesso
+      <span class="backup-create-icon">＋</span>
+      <span>
+        <strong>Crea backup adesso</strong>
+        <small>Salva una copia del database corrente</small>
+      </span>
     </button>
+
+    <div class="backup-list-head">
+      <strong>🗄️ Backup disponibili</strong>
+      <span id="backupCount" class="backup-count"></span>
+    </div>
 
     <div id="backupList"
          class="backup-list">
@@ -4942,15 +5126,19 @@ async function loadBackupList(){
     const data=await api('api/backups');
     const rows=data.backups||[];
 
+    const count=$('backupCount');
+    if(count) count.textContent=rows.length;
+
     box.innerHTML=rows.length
       ? rows.map(b=>`
         <div class="backup-row">
           <div class="backup-row-name">${esc(b.filename)}</div>
 
           <div class="backup-row-meta">
-            ${esc(b.modified)} · ${backupBytes(b.size)}
+            <span>🕒 ${esc(b.modified)}</span>
+            <span>💾 ${backupBytes(b.size)}</span>
             ${b.schema_version!==null && b.schema_version!==undefined
-              ? ` · schema ${esc(b.schema_version)}`
+              ? `<span>Schema ${esc(b.schema_version)}</span>`
               : ''}
           </div>
 
@@ -4961,7 +5149,7 @@ async function loadBackupList(){
           </div>
 
           <div class="backup-row-actions">
-            <a class="secondary"
+            <a class="secondary backup-download"
                style="display:flex;align-items:center;justify-content:center;text-decoration:none;border-radius:10px;padding:8px"
                href="api/backups/download/${encodeURIComponent(b.filename)}">
               ⬇ Scarica
@@ -4969,6 +5157,7 @@ async function loadBackupList(){
 
             ${b.valid?`
               <button type="button"
+                      class="backup-restore"
                       onclick="restoreBackupFromUi('${esc(b.filename)}')">
                 ↩ Ripristina
               </button>

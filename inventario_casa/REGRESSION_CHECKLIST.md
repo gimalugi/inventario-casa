@@ -291,3 +291,14 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [ ] Simulazione errore init mostra la modalità Recovery.
 - [ ] Recovery elenca i backup anche con DB principale non utilizzabile.
 - [ ] Nessun processo in background.
+
+## v2.3.1 - Backup UI
+
+- [ ] Finestra Backup si apre correttamente.
+- [ ] Il conteggio backup viene mostrato nel badge.
+- [ ] Nome file, data, dimensione e schema sono leggibili.
+- [ ] Stato integrità mostra correttamente OK/non valido.
+- [ ] Pulsante Scarica funziona.
+- [ ] Pulsante Ripristina resta distinto e visibile.
+- [ ] Su mobile i pulsanti si dispongono verticalmente.
+- [ ] Nessuna modifica alla logica backup/restore/recovery.

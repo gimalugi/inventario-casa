@@ -1,3 +1,11 @@
+## 2.3.1
+
+- Migliorata la grafica della finestra Backup database.
+- Aggiunti badge per data, dimensione, schema e stato integrità.
+- Migliorata la disposizione dei pulsanti Scarica e Ripristina.
+- Ottimizzazione mobile della finestra Backup.
+- Nessuna modifica alla logica di backup, restore, Recovery Mode o schema database.
+
 ## 2.3.0
 - Nuova sezione Backup database nell'interfaccia.
 - Creazione manuale di backup SQLite consistenti.
