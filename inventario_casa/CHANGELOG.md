@@ -1,3 +1,9 @@
+## 2.3.3
+
+- Corretto il formato data/ora nella finestra Backup.
+- Ripristinata la compatibilita della pagina Recovery.
+- Nessuna modifica a database, backup, restore o schema.
+
 ## 2.3.2
 
 - Migliorato il pulsante Scarica nella finestra Backup.

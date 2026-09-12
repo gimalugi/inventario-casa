@@ -1748,7 +1748,7 @@ async function loadBackups(){
       ? rows.map(b=>`
         <div class="backup">
           <strong>${esc(b.filename)}</strong><br>
-          <span class="muted">${esc(backupDate(b.modified))} · ${bytes(b.size)}</span><br>
+          <span class="muted">${esc(b.modified)} · ${bytes(b.size)}</span><br>
           <span class="${b.valid?'ok':'bad'}">
             ${b.valid?'✓ Backup integro':'⚠ '+esc(b.integrity)}
           </span>
@@ -5146,7 +5146,7 @@ async function loadBackupList(){
           <div class="backup-row-name">${esc(b.filename)}</div>
 
           <div class="backup-row-meta">
-            <span>🕒 ${esc(b.modified)}</span>
+            <span>🕒 ${esc(backupDate(b.modified))}</span>
             <span>💾 ${backupBytes(b.size)}</span>
             ${b.schema_version!==null && b.schema_version!==undefined
               ? `<span>Schema ${esc(b.schema_version)}</span>`

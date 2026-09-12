@@ -308,3 +308,9 @@ Da verificare prima di ogni rilascio di Inventario Casa:
 - [ ] Pulsante Scarica visivamente coerente con Ripristina.
 - [ ] Data backup mostrata nel formato GG/MM/AAAA.
 - [ ] Nessuna modifica a backup/restore/recovery.
+
+## v2.3.3 - Backup date fix
+
+- [ ] Data backup mostrata in formato GG/MM/AAAA · HH:MM:SS nella finestra normale.
+- [ ] Recovery continua a mostrare correttamente i backup senza errori JavaScript.
+- [ ] Nessuna modifica alla logica backup/restore.
