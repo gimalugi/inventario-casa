@@ -108,9 +108,65 @@ html.ha-theme-linked .item-subgroup:not(.collapsed) > .item-subgroup-head .item-
 """
 
 
-# PAGE contiene un unico blocco <style>; inseriamo l'override in coda così
-# prevale sui colori fissi delle versioni precedenti senza cambiare markup/API.
+THEME_LAYOUT_CSS = r"""
+
+/* v2.3.4 - maggiore separazione visiva con temi Home Assistant chiari */
+html.ha-theme-linked {
+  --inv-ha-card: var(
+    --card-background-color,
+    var(--secondary-background-color, var(--primary-background-color))
+  );
+}
+
+/* Card principali: maggiore separazione dallo sfondo della pagina */
+html.ha-theme-linked .stat,
+html.ha-theme-linked .panel,
+html.ha-theme-linked .type-card {
+  background: var(--inv-ha-card) !important;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--divider-color, var(--primary-text-color)) 75%,
+      transparent
+    ) !important;
+  box-shadow:
+    0 2px 8px
+    color-mix(
+      in srgb,
+      var(--primary-text-color) 9%,
+      transparent
+    ) !important;
+}
+
+/* Contenitori interni: distinguibili senza creare riquadri pesanti */
+html.ha-theme-linked .item,
+html.ha-theme-linked .type-row,
+html.ha-theme-linked .fieldrow {
+  background:
+    color-mix(
+      in srgb,
+      var(--secondary-background-color, var(--inv-ha-card)) 92%,
+      transparent
+    ) !important;
+}
+
+/* Riquadro informativo della scheda Foto */
+html.ha-theme-linked .new-item-photo-hint,
+html.ha-theme-linked .photo-hint {
+  background: var(--secondary-background-color, var(--inv-ha-card)) !important;
+  color: var(--secondary-text-color, var(--inv-ha-muted)) !important;
+  border-color: var(--divider-color, var(--inv-ha-divider)) !important;
+}
+
+"""
+
+
+# PAGE contiene un unico blocco <style>; inseriamo gli override in coda così
+# prevalgono sui colori fissi delle versioni precedenti senza cambiare markup/API.
 if THEME_TEXT_CSS not in inventory.PAGE:
     inventory.PAGE = inventory.PAGE.replace("</style>", THEME_TEXT_CSS + "\n</style>", 1)
+
+if THEME_LAYOUT_CSS not in inventory.PAGE:
+    inventory.PAGE = inventory.PAGE.replace("</style>", THEME_LAYOUT_CSS + "\n</style>", 1)
 
 app = inventory.app
