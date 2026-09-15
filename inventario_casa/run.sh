@@ -38,4 +38,4 @@ exec gunicorn \
   --threads 4 \
   --access-logfile - \
   --error-logfile - \
-  app:app
+  wsgi:app
