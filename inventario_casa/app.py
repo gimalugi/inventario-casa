@@ -3820,7 +3820,7 @@ html.ha-theme-linked .search-clear{
   <div class="dialog barcode-dialog">
     <button type="button" class="dialog-close-btn" onclick="stopBarcodeScan()" aria-label="Chiudi" title="Chiudi">×</button>
     <h2>📷 Scansiona ISBN / EAN</h2>
-    <div class="hint">In HTTPS usa la scansione live. In accesso locale HTTP apre automaticamente la fotocamera per scattare il codice. Nessuna scansione in background.</div>
+    <div class="hint">La scansione con fotocamera richiede una connessione HTTPS. Se la scansione live non è disponibile, puoi scattare una foto del codice oppure inserirlo manualmente.</div>
     <br>
     <div class="barcode-reader">
       <video id="barcodeVideo" playsinline muted></video>
@@ -4497,6 +4497,7 @@ function renderCustom(mode,values={}){
   }).join('');
 
   enableVoiceInputs(box);
+  updateCameraAvailability();
 }
 
 function toggleCustomField(btn){
@@ -4543,6 +4544,22 @@ let barcodeScanTimer=null;
 let barcodeTarget=null;
 let barcodeBusy=false;
 let barcodeFallbackMode=false;
+
+function cameraSecureContextAvailable(){
+  return !!(window.isSecureContext &&
+            navigator.mediaDevices?.getUserMedia);
+}
+
+function updateCameraAvailability(){
+  const available=cameraSecureContextAvailable();
+
+  document.querySelectorAll('.scan-code-btn').forEach(btn=>{
+    btn.disabled=!available;
+    btn.title=available
+      ? 'Scansiona codice con la fotocamera'
+      : 'Fotocamera non disponibile: è richiesta una connessione HTTPS';
+  });
+}
 
 function normalizeBarcodeValue(raw){
   return String(raw||'').trim().replace(/[^0-9Xx]/g,'').toUpperCase();
@@ -4600,19 +4617,16 @@ async function decodeBarcodeOnServer(blob, filename='frame.jpg'){
 async function startBarcodeScan(mode,fieldId,btn){
   barcodeTarget={mode,fieldId,statusEl:btn.parentElement.querySelector('.book-lookup-status')};
 
-  // In accesso locale HTTP la fotocamera live (getUserMedia) può essere
-  // bloccata dal browser. In quel caso apriamo direttamente la fotocamera
-  // di sistema tramite input file/capture, che non richiede getUserMedia.
-  const canLiveCamera=!!(window.isSecureContext && navigator.mediaDevices?.getUserMedia);
+  // v2.3.5 - la fotocamera viene usata solo in un contesto sicuro.
+  // In HTTP l'inserimento manuale e il caricamento di file restano disponibili.
+  const canLiveCamera=cameraSecureContextAvailable();
   if(!canLiveCamera){
     const targetStatus=barcodeTarget.statusEl;
-    if(targetStatus) targetStatus.textContent='📷 Modalità foto: inquadra il codice e scatta.';
-    const inp=$('barcodePhotoInput');
-    if(inp){
-      inp.value='';
-      inp.click();
-      return;
+    if(targetStatus){
+      targetStatus.textContent='🔒 Fotocamera non disponibile: è richiesta una connessione HTTPS. Inserisci il codice manualmente.';
     }
+    barcodeTarget=null;
+    return;
   }
 
   const dlg=$('barcodeDlg'), video=$('barcodeVideo'), status=$('barcodeStatus');
@@ -4686,6 +4700,14 @@ function stopBarcodeScan(clearTarget=true){
 }
 
 function chooseBarcodePhoto(){
+  if(!cameraSecureContextAvailable()){
+    const status=$('barcodeStatus');
+    if(status){
+      status.textContent='🔒 Fotocamera non disponibile: è richiesta una connessione HTTPS.';
+    }
+    return;
+  }
+
   if(barcodeStream){barcodeStream.getTracks().forEach(t=>t.stop());barcodeStream=null;}
   const inp=$('barcodePhotoInput');
   if(inp){inp.value='';inp.click();}
