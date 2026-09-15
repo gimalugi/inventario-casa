@@ -170,3 +170,29 @@ if THEME_LAYOUT_CSS not in inventory.PAGE:
     inventory.PAGE = inventory.PAGE.replace("</style>", THEME_LAYOUT_CSS + "\n</style>", 1)
 
 app = inventory.app
+
+# v2.3.5 - compatibilità menu SELECT nativi Windows/Chrome
+SELECT_NATIVE_FIX_CSS = r"""
+<style>
+/*
+ * I menu OPTION sono controlli nativi del browser/OS.
+ * Su Windows/Chrome possono avere sfondo bianco anche con tema HA scuro.
+ */
+select option {
+  background: #ffffff !important;
+  color: #202124 !important;
+}
+
+select option:checked {
+  background: #8ab4f8 !important;
+  color: #202124 !important;
+}
+</style>
+"""
+
+if SELECT_NATIVE_FIX_CSS not in inventory.PAGE:
+    inventory.PAGE = inventory.PAGE.replace(
+        "</head>",
+        SELECT_NATIVE_FIX_CSS + "\n</head>",
+        1
+    )
