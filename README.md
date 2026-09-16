@@ -1,17 +1,40 @@
 # Inventario Casa v2.3.5
 
-Versione correttiva e completa.
+Inventario Casa è un'App per Home Assistant dedicata alla gestione dell'inventario domestico.
 
-Aggiornamento:
-1. Sostituire i file in `/addons/inventario_casa` con questa versione.
-2. In Home Assistant ricostruire/reinstallare l'App.
-3. Non cancellare i dati dell'App.
+Permette di catalogare oggetti, libri, fumetti e altri beni, organizzandoli per tipologia, ambiente e posizione, con fotografie e campi personalizzati.
 
-Persistenza:
+## Installazione
+
+Inventario Casa si installa tramite lo Store delle App di Home Assistant.
+
+1. Aprire **Home Assistant**.
+2. Andare in **Impostazioni → App → Store delle App**.
+3. Aprire il menu **⋮ → Repository**.
+4. Aggiungere il repository: `https://github.com/gimalugi/inventario-casa`.
+5. Tornare allo Store delle App.
+6. Selezionare **Inventario Casa**.
+7. Premere **Installa**.
+8. Al termine dell'installazione, avviare l'App.
+
+Non è necessario copiare manualmente file nella cartella `/addons`.
+
+## Aggiornamento
+
+Quando viene pubblicata una nuova versione, Home Assistant può segnalarne la disponibilità direttamente dalla pagina dell'App.
+
+L'aggiornamento viene eseguito tramite Home Assistant, senza sostituire manualmente i file dell'App.
+
+Non cancellare i dati dell'App durante l'aggiornamento.
+
+## Persistenza
+
+I dati dell'App sono conservati separatamente dal codice:
+
 - Database: `/data/inventario_casa/inventario.db`
 - Foto: `/media/inventario_casa/oggetti`
 
-La migrazione è additiva: conserva gli elementi e i campi già presenti.
+Gli aggiornamenti mantengono database, fotografie, elementi e campi già presenti.
 
 Novità 0.1.7: ogni campo personalizzato può avere un testo di esempio facoltativo.
 
