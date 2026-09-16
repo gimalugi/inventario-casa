@@ -3,6 +3,8 @@ set -euo pipefail
 
 REPO="gimalugi/inventario-casa"
 CONFIG="inventario_casa/config.yaml"
+README_IT="README.md"
+README_EN="README_EN.md"
 API="https://api.github.com"
 NOTES_FILE="RELEASE_NOTES.md"
 
@@ -34,6 +36,19 @@ CONFIG_VERSION="$(sed -n 's/^version:[[:space:]]*["'\'']\?\([^"'\'']*\)["'\'']\?
 
 [ "$CONFIG_VERSION" = "$VERSION" ] || \
   die "config.yaml contiene versione $CONFIG_VERSION, richiesta $VERSION."
+
+# Controlla che anche la documentazione riporti la versione da pubblicare.
+for README_FILE in "$README_IT" "$README_EN"; do
+  [ -f "$README_FILE" ] || die "$README_FILE non trovato."
+
+  README_VERSION="$(sed -n 's/^# Inventario Casa v\([^[:space:]]*\).*/\1/p' "$README_FILE" | head -1)"
+
+  [ -n "$README_VERSION" ] || \
+    die "Impossibile rilevare la versione in $README_FILE."
+
+  [ "$README_VERSION" = "$VERSION" ] || \
+    die "$README_FILE contiene versione $README_VERSION, richiesta $VERSION."
+done
 
 echo "Aggiorno i riferimenti remoti..."
 git fetch origin main --tags
