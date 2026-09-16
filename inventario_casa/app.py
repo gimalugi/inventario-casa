@@ -1834,6 +1834,17 @@ body{
 header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
 h1{margin:0;font-size:1.5rem}.sub,.meta,.hint{color:var(--muted)}
 .search{display:flex;gap:7px;flex:1;min-width:260px;max-width:540px}
+.language-select{
+  width:auto;
+  min-width:74px;
+  flex:0 0 auto;
+  padding:9px 8px;
+  background:var(--panel2);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:10px;
+  cursor:pointer;
+}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
 .stat,.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:13px}
 .stat b{display:block;font-size:1.25rem}
@@ -3506,10 +3517,13 @@ html.ha-theme-linked .search-clear{
 <body>
 <div class="wrap">
 <header>
-  <div><h1>🏠 Inventario Casa</h1><div class="sub">Trova cosa possiedi e dove si trova.</div></div>
+  <div>
+    <h1>🏠 Inventario Casa</h1>
+    <div class="sub" data-i18n="subtitle">Trova cosa possiedi e dove si trova.</div>
+  </div>
   <div class="search">
     <div class="search-input-wrap">
-      <input id="search" placeholder="Cerca qualsiasi cosa…" oninput="updateSearchClear()">
+      <input id="search" data-i18n-placeholder="search_placeholder" placeholder="Cerca qualsiasi cosa…" oninput="updateSearchClear()">
       <button id="searchClear"
               type="button"
               class="search-clear"
@@ -3518,36 +3532,46 @@ html.ha-theme-linked .search-clear{
               title="Cancella ricerca">×</button>
     </div>
     <button type="button" class="secondary" onclick="load()">🔎</button>
+    <select id="languageSelect"
+            class="language-select"
+            onchange="setLanguage(this.value)"
+            data-i18n-title="language"
+            data-i18n-aria-label="language"
+            aria-label="Lingua"
+            title="Lingua">
+      <option value="it">🌐 IT</option>
+      <option value="en">🌐 EN</option>
+    </select>
   </div>
 </header>
 
 <div class="stats">
-  <div class="stat"><b id="countItems">0</b><span class="sub">elementi</span></div>
-  <div class="stat"><b id="countEnv">0</b><span class="sub">ambienti</span></div>
-  <div class="stat"><b id="countTypes">0</b><span class="sub">tipologie</span></div>
+  <div class="stat"><b id="countItems">0</b><span class="sub" data-i18n="items">elementi</span></div>
+  <div class="stat"><b id="countEnv">0</b><span class="sub" data-i18n="environments">ambienti</span></div>
+  <div class="stat"><b id="countTypes">0</b><span class="sub" data-i18n="types">tipologie</span></div>
 </div>
 
 <div class="layout">
 <main>
   <div id="newItemPanel" class="panel new-item-panel collapsed">
     <button type="button" class="new-item-head" onclick="toggleNewItemPanel()" aria-expanded="false">
-      <span>➕ Nuovo elemento</span>
+      <span>➕ <span data-i18n="new_item">Nuovo elemento</span></span>
       <span id="newItemChevron" class="new-item-chevron">▾</span>
     </button>
     <div class="new-item-body">
     <div class="tabs">
-      <button class="tabbtn active" onclick="showTab('add','general',this)">Generale</button>
-      <button class="tabbtn" onclick="showTab('add','details',this)">Dettagli</button>
-      <button class="tabbtn" onclick="showTab('add','position',this)">Posizione</button>
-      <button class="tabbtn" onclick="showTab('add','photos',this)">Foto</button>
-      <button class="tabbtn" onclick="showTab('add','notes',this)">Note</button>
+      <button class="tabbtn active" data-i18n="general" onclick="showTab('add','general',this)">Generale</button>
+      <button class="tabbtn" data-i18n="details" onclick="showTab('add','details',this)">Dettagli</button>
+      <button class="tabbtn" data-i18n="position" onclick="showTab('add','position',this)">Posizione</button>
+      <button class="tabbtn" data-i18n="photos" onclick="showTab('add','photos',this)">Foto</button>
+      <button class="tabbtn" data-i18n="notes" onclick="showTab('add','notes',this)">Note</button>
     </div>
 
     <div id="add-general" class="tab active">
       <div class="form">
-        <input id="aName" class="full" placeholder="Nome elemento">
+        <input id="aName" class="full" data-i18n-placeholder="item_name" placeholder="Nome elemento">
         <select id="aType" onchange="renderCustom('add')"></select>
-        <input id="aQty" type="number" min="1" value="1" placeholder="Quantità">
+        <input id="aQty" type="number" min="1" value="1" data-i18n-placeholder="quantity" placeholder="Quantità">
       </div>
     </div>
 
@@ -3837,6 +3861,99 @@ let editingItem=null, editingType=null, viewingItem=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+/* v2.4.0 - infrastruttura multilingua.
+   Vengono tradotte esclusivamente le stringhe dell'interfaccia.
+   I dati inseriti dall'utente non vengono modificati. */
+const I18N={
+  it:{
+    subtitle:'Trova cosa possiedi e dove si trova.',
+    search_placeholder:'Cerca qualsiasi cosa…',
+    items:'elementi',
+    environments:'ambienti',
+    types:'tipologie',
+    new_item:'Nuovo elemento',
+    general:'Generale',
+    details:'Dettagli',
+    position:'Posizione',
+    photos:'Foto',
+    notes:'Note',
+    item_name:'Nome elemento',
+    quantity:'Quantità',
+    language:'Lingua'
+  },
+  en:{
+    subtitle:'Find what you own and where it is.',
+    search_placeholder:'Search anything…',
+    items:'items',
+    environments:'locations',
+    types:'types',
+    new_item:'New item',
+    general:'General',
+    details:'Details',
+    position:'Location',
+    photos:'Photos',
+    notes:'Notes',
+    item_name:'Item name',
+    quantity:'Quantity',
+    language:'Language'
+  }
+};
+
+const LANGUAGE_STORAGE_KEY='inventario_language';
+
+function detectInitialLanguage(){
+  const saved=localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if(saved && I18N[saved]) return saved;
+
+  const browserLanguage=(navigator.language||'it').toLowerCase();
+  if(browserLanguage.startsWith('en')) return 'en';
+
+  return 'it';
+}
+
+let currentLanguage=detectInitialLanguage();
+
+function t(key){
+  return I18N[currentLanguage]?.[key] ??
+         I18N.it[key] ??
+         key;
+}
+
+function applyLanguage(){
+  document.documentElement.lang=currentLanguage;
+
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.dataset.i18n;
+    el.textContent=t(key);
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    const key=el.dataset.i18nPlaceholder;
+    el.placeholder=t(key);
+  });
+
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{
+    const key=el.dataset.i18nTitle;
+    el.title=t(key);
+  });
+
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(el=>{
+    const key=el.dataset.i18nAriaLabel;
+    el.setAttribute('aria-label',t(key));
+  });
+
+  const selector=$('languageSelect');
+  if(selector) selector.value=currentLanguage;
+}
+
+function setLanguage(language){
+  if(!I18N[language]) return;
+
+  currentLanguage=language;
+  localStorage.setItem(LANGUAGE_STORAGE_KEY,language);
+  applyLanguage();
+}
 
 async function api(path,opts={}){
   const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
@@ -5274,6 +5391,7 @@ async function restoreBackupFromUi(filename){
 $('search').addEventListener('keydown',e=>{if(e.key==='Enter')load();});
 
 syncHomeAssistantTheme();
+applyLanguage();
 updateSearchClear();
 
 window.addEventListener('focus',syncHomeAssistantTheme);
