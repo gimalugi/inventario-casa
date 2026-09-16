@@ -1,5 +1,7 @@
 # Inventario Casa v2.3.5
 
+🇮🇹 **Italiano** | 🇬🇧 [English](README_EN.md)
+
 Inventario Casa è un'App per Home Assistant dedicata alla gestione dell'inventario domestico.
 
 Permette di catalogare oggetti, libri, fumetti e altri beni, organizzandoli per tipologia, ambiente e posizione, con fotografie e campi personalizzati.
