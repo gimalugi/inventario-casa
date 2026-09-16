@@ -448,6 +448,11 @@ def ensure_type_field(conn, type_name, label, field_type="text", required=0, opt
 
 
 def init_db():
+    # Le tipologie standard vengono create esclusivamente quando il database
+    # viene creato per la prima volta. Dopo l'inizializzazione, tipologie e
+    # campi appartengono all'utente e non devono essere ricreati al riavvio.
+    new_database = not DB_PATH.exists()
+
     previous_schema_version = read_schema_version()
 
     if (
@@ -552,46 +557,30 @@ def init_db():
                 "AND TRIM(COALESCE(caption,''))<>''"
             )
 
-        now = datetime.now().isoformat(timespec="seconds")
-        defaults = [
-            ("Oggetto", "📦"),
-            ("Libro", "📚"),
-            ("Fumetto", "💬"),
-            ("Rivista", "📰"),
-        ]
-        for name, icon in defaults:
-            conn.execute(
-                "INSERT OR IGNORE INTO item_types(name,icon,created_at) VALUES(?,?,?)",
-                (name, icon, now),
-            )
+        # Tipologie iniziali: vengono proposte soltanto su un database nuovo.
+        # Dopo la prima inizializzazione l'utente può modificarle o eliminarle
+        # e Inventario Casa non le ricreerà automaticamente.
+        if new_database:
+            now = datetime.now().isoformat(timespec="seconds")
+            defaults = [
+                ("Apparecchiature elettroniche", "🔌"),
+                ("Libri", "📚"),
+                ("Oggetti", "📦"),
+            ]
+            for name, icon in defaults:
+                conn.execute(
+                    "INSERT OR IGNORE INTO item_types(name,icon,created_at) VALUES(?,?,?)",
+                    (name, icon, now),
+                )
 
-        # Migrazioni additive: non sovrascrivono e non duplicano campi esistenti.
-        libro = [
-            ("Autore", "text", 0, ""),
-            ("ISBN", "text", 0, ""),
-            ("Editore", "text", 0, ""),
-            ("Anno", "number", 0, ""),
-        ]
-        fumetto = [
-            ("Serie", "text", 0, ""),
-            ("Numero", "number", 0, ""),
-            ("ISBN / EAN", "text", 0, ""),
-            ("Editore", "text", 0, ""),
-            ("Anno", "number", 0, ""),
-            ("Condizione", "select", 0, "Come nuovo,Ottimo,Molto buono,Buono,Discreto,Scarso"),
-            ("Difetti", "textarea", 0, ""),
-        ]
-        rivista = [
-            ("Testata", "text", 0, ""),
-            ("Numero", "number", 0, ""),
-            ("Data", "date", 0, ""),
-        ]
-        for idx, f in enumerate(libro):
-            ensure_type_field(conn, "Libro", *f, sort_order=idx)
-        for idx, f in enumerate(fumetto):
-            ensure_type_field(conn, "Fumetto", *f, sort_order=idx)
-        for idx, f in enumerate(rivista):
-            ensure_type_field(conn, "Rivista", *f, sort_order=idx)
+            libri = [
+                ("Autore", "text", 0, ""),
+                ("ISBN", "text", 0, ""),
+                ("Editore", "text", 0, ""),
+                ("Anno", "number", 0, ""),
+            ]
+            for idx, f in enumerate(libri):
+                ensure_type_field(conn, "Libri", *f, sort_order=idx)
 
         write_schema_version(conn, CURRENT_SCHEMA_VERSION)
 
