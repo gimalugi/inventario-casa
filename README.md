@@ -1,4 +1,4 @@
-# Inventario Casa v2.3.5
+# Inventario Casa v2.3.6
 
 🇮🇹 **Italiano** | 🇬🇧 [English](README_EN.md)
 
@@ -153,3 +153,11 @@ Inventario Casa 2.1.0 - gestione grandi archivi:
 - Migliorata la leggibilità delle opzioni dei menu a tendina nativi su Windows/Chrome.
 - Nessuna modifica al database o al relativo schema.
 
+## Inventario Casa 2.3.6 - gestione tipologie predefinite
+
+- Corrette le tipologie predefinite create nelle nuove installazioni.
+- Le nuove installazioni partono con **Apparecchiature elettroniche**, **Libri** e **Oggetti**.
+- La tipologia **Libri** include i campi Autore, ISBN, Editore e Anno.
+- Le tipologie e i campi predefiniti vengono creati solo alla prima inizializzazione.
+- Le tipologie eliminate dall'utente non vengono più ricreate al riavvio.
+- Nessuna modifica automatica alle tipologie o ai dati delle installazioni esistenti.

@@ -1,4 +1,4 @@
-# Inventario Casa v2.3.5
+# Inventario Casa v2.3.6
 
 🇮🇹 [Italiano](README.md) | 🇬🇧 **English**
 
@@ -146,3 +146,12 @@ Inventario Casa updates are designed to preserve:
 - inventory items.
 
 A recent Home Assistant backup is recommended before major structural changes.
+
+## Version 2.3.6
+
+- Fixed the default item types created on new installations.
+- New installations start with **Apparecchiature elettroniche**, **Libri** and **Oggetti**.
+- The **Libri** type includes Author, ISBN, Publisher and Year fields.
+- Default types and fields are created only during the first initialization.
+- Types deleted by the user are no longer recreated after restarting the App.
+- No automatic changes are made to existing item types or inventory data.
