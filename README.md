@@ -1,4 +1,4 @@
-# Inventario Casa v2.3.3
+# Inventario Casa v2.3.5
 
 Versione correttiva e completa.
 
@@ -103,3 +103,28 @@ Inventario Casa 2.1.0 - gestione grandi archivi:
 - i gruppi nuovi partono chiusi per evitare caricamenti inutili;
 - la scheda di un elemento può essere recuperata singolarmente dal database;
 - nessuna modifica distruttiva al database, alle foto o alle tipologie esistenti.
+
+## Inventario Casa 2.3.4 - integrazione temi Home Assistant
+
+- Colori dei testi adattati dinamicamente al tema Home Assistant.
+- Supporto migliorato per temi chiari e scuri.
+- Campi di inserimento, menu, textarea e placeholder adattati al tema attivo.
+- Migliore contrasto e separazione visiva di card e pannelli.
+- Migliorata la leggibilità della schermata principale con temi chiari.
+- Migliorata la visualizzazione del riquadro informativo della sezione Foto.
+- Mantenuti i colori semantici per successo, errore, pericolo e accenti.
+- Corretto il caricamento del layer grafico tramite WSGI.
+- Nessuna modifica al database o al relativo schema.
+
+## Inventario Casa 2.3.5 - gestione sicura della fotocamera
+
+- La scansione ISBN/EAN tramite fotocamera è disponibile solo in connessioni sicure HTTPS.
+- In connessioni HTTP il pulsante di scansione rimane visibile ma viene disabilitato.
+- Inserimento manuale di ISBN/EAN e ricerca dati rimangono sempre disponibili.
+- In HTTPS viene utilizzata la scansione live quando supportata dal browser.
+- Se la scansione live non è disponibile, rimane disponibile il fallback tramite foto.
+- Aggiunta una protezione anche al fallback fotografico per impedire l'accesso alla fotocamera in contesti non sicuri.
+- Aggiornati i messaggi della finestra di scansione per distinguere correttamente il comportamento HTTP/HTTPS.
+- Migliorata la leggibilità delle opzioni dei menu a tendina nativi su Windows/Chrome.
+- Nessuna modifica al database o al relativo schema.
+
