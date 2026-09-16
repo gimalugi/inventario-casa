@@ -3770,7 +3770,7 @@ html.ha-theme-linked .search-clear{
       <button class="tabbtn active" onclick="showTab('edit','general',this)">Generale</button>
       <button class="tabbtn" onclick="showTab('edit','details',this)">Dettagli</button>
       <button class="tabbtn" onclick="showTab('edit','position',this)">Posizione</button>
-      <button class="tabbtn" onclick="showTab('edit','photos',this)">Foto</button>
+      <button class="tabbtn" data-tab="photos" onclick="showTab('edit','photos',this)">Foto</button>
       <button class="tabbtn" onclick="showTab('edit','notes',this)">Note</button>
     </div>
 
@@ -4916,7 +4916,7 @@ async function createItem(){
     await load();
   setNewItemCollapsed(true);
     editItem(data.id);
-    const photoBtn=[...document.querySelectorAll('#editDlg .tabbtn')].find(b=>b.textContent.trim()==='Foto');
+    const photoBtn=document.querySelector('#editDlg .tabbtn[data-tab="photos"]');
     if(photoBtn) photoBtn.click();
   }catch(e){alert(e.message);}
 }
@@ -4976,7 +4976,7 @@ async function openPreviewPhotosEditor(){
   const id=viewingItem;if(!id)return;
   closeItemPreview();
   await editItem(id);
-  const photoBtn=[...document.querySelectorAll('#editDlg .tabbtn')].find(b=>b.textContent.trim()==='Foto');
+  const photoBtn=document.querySelector('#editDlg .tabbtn[data-tab="photos"]');
   if(photoBtn) photoBtn.click();
 }
 
