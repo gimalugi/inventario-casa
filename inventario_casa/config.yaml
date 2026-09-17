@@ -1,5 +1,5 @@
 name: "Inventario Casa"
-version: "2.3.6"
+version: "2.4.0"
 slug: "inventario_casa"
 description: "Inventario domestico modulare per oggetti, posizioni, foto e tipologie personalizzabili"
 arch:
