@@ -50,6 +50,17 @@ for README_FILE in "$README_IT" "$README_EN"; do
     die "$README_FILE contiene versione $README_VERSION, richiesta $VERSION."
 done
 
+CHANGELOG="inventario_casa/CHANGELOG.md"
+[ -f "$CHANGELOG" ] || die "$CHANGELOG non trovato."
+
+CHANGELOG_VERSION="$(sed -n 's/^##[[:space:]]\+\([0-9][0-9.]*\)[[:space:]]*$/\1/p' "$CHANGELOG" | head -1)"
+
+[ -n "$CHANGELOG_VERSION" ] || \
+  die "Impossibile rilevare la versione nel CHANGELOG."
+
+[ "$CHANGELOG_VERSION" = "$VERSION" ] || \
+  die "CHANGELOG contiene versione $CHANGELOG_VERSION, richiesta $VERSION."
+
 echo "Aggiorno i riferimenti remoti..."
 git fetch origin main --tags
 

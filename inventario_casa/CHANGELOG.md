@@ -1,3 +1,11 @@
+## 2.4.1
+
+- Corretto il ripristino delle tipologie lasciate aperte nella sezione "Cosa possiedo".
+- Gli elementi dei gruppi aperti vengono ricaricati correttamente tornando alla vista Inventario.
+- Evitate richieste ripetute e non necessarie per il caricamento dei sottogruppi.
+- Migliorata la gestione asincrona del caricamento di gruppi e sottogruppi.
+- Nessuna modifica al database, allo schema o ai dati esistenti.
+
 ## 2.4.0
 
 - Aggiunto supporto completo dell'interfaccia in Italiano e Inglese.

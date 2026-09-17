@@ -1,4 +1,4 @@
-# Inventario Casa v2.4.0
+# Inventario Casa v2.4.1
 
 🇮🇹 **Italiano** | 🇬🇧 [English](README_EN.md)
 
