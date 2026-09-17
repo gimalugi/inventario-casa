@@ -4614,14 +4614,7 @@ async function toggleItemGroup(btn){
   const key=group.dataset.groupKey;
   const collapsed=group.classList.toggle('collapsed');
   localStorage.setItem(groupStorageKey(grouping,key),collapsed?'1':'0');
-  if(!collapsed){
-    if(grouping==='type'){
-      await loadSubgroups(key);
-      if(S.subgroups[key]===null && !(S.groupItems[key]||[]).length) await loadGroupPage(key,true);
-    }else if(!(S.groupItems[key]||[]).length){
-      await loadGroupPage(key,true);
-    }
-  }
+  if(!collapsed) await ensureOpenGroupLoaded(grouping,key);
 }
 
 function setNewItemCollapsed(collapsed){
@@ -4859,11 +4852,36 @@ function subgroupCacheKey(typeKey,subKey){return String(typeKey)+'::'+String(sub
 function subgroupStorageKey(typeKey,subKey){return 'inventario_subgroup_collapsed_'+typeKey+'_'+String(subKey).toLowerCase();}
 function isSubgroupCollapsed(typeKey,subKey){const v=localStorage.getItem(subgroupStorageKey(typeKey,subKey));return v===null?true:v==='1';}
 async function loadSubgroups(typeKey){
-  if(S.subgroups[typeKey])return;
+  // undefined = non ancora verificato; null = verificato, sottogruppi disabilitati.
+  if(S.subgroups[typeKey] !== undefined)return;
   const q=$('search').value.trim(); const p=new URLSearchParams({type_id:String(typeKey)}); if(q)p.set('q',q);
   const d=await api('api/inventory-subgroups?'+p.toString());
   S.subgroups[typeKey]=d.enabled?(d.subgroups||[]):null;
   renderInventory();
+}
+
+async function ensureOpenGroupLoaded(grouping,key){
+  S.openGroupLoads=S.openGroupLoads||{};
+  const loadKey=grouping+'::'+String(key);
+  if(S.openGroupLoads[loadKey])return S.openGroupLoads[loadKey];
+
+  const job=(async()=>{
+    if(grouping==='type'){
+      await loadSubgroups(key);
+      if(S.subgroups[key]===null && !(S.groupItems[key]||[]).length){
+        await loadGroupPage(key,true);
+      }
+    }else if(!(S.groupItems[key]||[]).length){
+      await loadGroupPage(key,true);
+    }
+  })();
+
+  S.openGroupLoads[loadKey]=job;
+  try{
+    await job;
+  }finally{
+    delete S.openGroupLoads[loadKey];
+  }
 }
 async function toggleSubgroup(btn){
   const el=btn.closest('.item-subgroup'); if(!el)return;
@@ -5007,9 +5025,11 @@ function renderInventory(){
     const total=Number(g.item_count||0);
     let body;
     if(grouping==='type'){
-      const subhtml=renderTypeSubgroups(key);
-      if(subhtml!==null) body=subhtml;
-      else body=items.length ? `${items.map(renderItemRow).join('')}${renderLoadMore(key,items.length,total)}` : `<div class="inventory-loader">${t('open_group_load')}</div>`;
+      // I gruppi chiusi non devono avviare richieste di sottogruppi.
+      const subhtml=collapsed ? undefined : renderTypeSubgroups(key);
+      if(collapsed) body='';
+      else if(subhtml!==null) body=subhtml;
+      else body=items.length ? `${items.map(renderItemRow).join('')}${renderLoadMore(key,items.length,total)}` : `<div class="inventory-loader">${t('loading_items')}</div>`;
     }else{
       body=items.length ? `${items.map(renderItemRow).join('')}${renderLoadMore(key,items.length,total)}` : `<div class="inventory-loader">${t('open_group_load')}</div>`;
     }
@@ -5026,12 +5046,11 @@ function renderInventory(){
       </section>`;
   }).join('');
 
-  // Ripristina solo i gruppi che l'utente aveva lasciato aperti, 50 righe per gruppo.
+  // Carica soltanto i gruppi realmente aperti. La stessa routine gestisce
+  // tipologie con sottogruppi e tipologie semplici senza creare richieste duplicate.
   for(const g of groups){
     const key=String(g.group_key);
-    if(!isGroupCollapsed(grouping,key) && grouping!=='type' && !(S.groupItems[key]||[]).length){
-      loadGroupPage(key,true);
-    }
+    if(!isGroupCollapsed(grouping,key)) ensureOpenGroupLoaded(grouping,key);
   }
 }
 
