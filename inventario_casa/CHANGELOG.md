@@ -1,3 +1,35 @@
+## 2.4.0
+
+- Aggiunto supporto completo dell'interfaccia in Italiano e Inglese.
+- Aggiunto selettore manuale della lingua con memorizzazione della preferenza.
+- Rilevamento automatico della lingua di Home Assistant con fallback sulla lingua del browser.
+- I dati inseriti dall'utente non vengono tradotti o modificati.
+- Resa multilingua la gestione di elementi, tipologie, ricerca, gruppi, paginazione e Backup & Restore.
+- Aggiunta interfaccia Recovery autonoma in Italiano e Inglese.
+- Migliorata la gestione delle foto con selettore file indipendente dalla lingua del browser.
+- Aggiornamento immediato delle miniature dopo upload o eliminazione di una foto.
+- Migliorate etichette, tooltip e attributi di accessibilità.
+- Nessuna modifica automatica al database, allo schema o ai dati esistenti.
+
+## 2.3.6
+
+- Le tipologie predefinite vengono create solo alla prima inizializzazione di un database nuovo.
+- Evitata la ricreazione automatica delle tipologie predefinite nei database già esistenti.
+- Nessuna modifica ai dati dell'inventario esistente.
+
+## 2.3.5
+
+- Migliorata la gestione della fotocamera in connessioni HTTPS.
+- Corretto il comportamento del selettore nella gestione scanner/fotocamera.
+- Mantenuto il fallback tramite acquisizione foto quando la fotocamera diretta non è disponibile.
+- Nessuna modifica al database.
+
+## 2.3.4
+
+- Migliorata la compatibilità grafica con i colori del tema Home Assistant.
+- Corrette etichette e colori dell'interfaccia tramite il wrapper WSGI.
+- Nessuna modifica al database o allo schema.
+
 ## 2.3.3
 
 - Corretto il formato data/ora nella finestra Backup.
