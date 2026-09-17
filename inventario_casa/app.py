@@ -1698,8 +1698,8 @@ button,a.btn{
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>🛟 Inventario Casa - Recovery</h1>
-    <p>
+    <h1 id="recoveryTitle">🛟 Inventario Casa - Recovery</h1>
+    <p id="recoveryDescription">
       Inventario Casa non è riuscito ad aprire o aggiornare correttamente
       il database. I backup restano disponibili.
     </p>
@@ -1707,13 +1707,93 @@ button,a.btn{
   </div>
 
   <div class="card">
-    <h2>Backup disponibili</h2>
+    <h2 id="recoveryBackupsTitle">Backup disponibili</h2>
     <div id="backups">Caricamento…</div>
   </div>
 </div>
 
 <script>
 const $=id=>document.getElementById(id);
+
+const RECOVERY_I18N={
+  it:{
+    title:'🛟 Inventario Casa - Recovery',
+    description:'Inventario Casa non è riuscito ad aprire o aggiornare correttamente il database. I backup restano disponibili.',
+    available_backups:'Backup disponibili',
+    loading:'Caricamento…',
+    valid_backup:'✓ Backup integro',
+    items:'elementi',
+    types:'tipologie',
+    photos:'foto',
+    download:'Scarica',
+    restore:'Ripristina',
+    no_backups:'Nessun backup disponibile.',
+    error:'Errore',
+    restore_confirm:'Ripristinare questo backup?\n\n{name}\n\nIl database corrente verrà sostituito.',
+    restore_keyword:'Per confermare il ripristino scrivi:\n\nRIPRISTINA',
+    restore_failed:'Ripristino non riuscito',
+    restore_ok:'Backup ripristinato correttamente.',
+    integrity:'Integrity check'
+  },
+  en:{
+    title:'🛟 Home Inventory - Recovery',
+    description:'Home Inventory could not open or update the database correctly. Backups remain available.',
+    available_backups:'Available backups',
+    loading:'Loading…',
+    valid_backup:'✓ Valid backup',
+    items:'items',
+    types:'types',
+    photos:'photos',
+    download:'Download',
+    restore:'Restore',
+    no_backups:'No backups available.',
+    error:'Error',
+    restore_confirm:'Restore this backup?\n\n{name}\n\nThe current database will be replaced.',
+    restore_keyword:'To confirm the restore, type:\n\nRIPRISTINA',
+    restore_failed:'Restore failed',
+    restore_ok:'Backup restored successfully.',
+    integrity:'Integrity check'
+  }
+};
+
+function recoveryLanguage(){
+  try{
+    if(window.parent && window.parent!==window){
+      const lang=(
+        window.parent.document.documentElement.lang||''
+      ).toLowerCase();
+
+      if(lang.startsWith('en')) return 'en';
+      if(lang.startsWith('it')) return 'it';
+    }
+  }catch(e){}
+
+  const lang=(navigator.language||'it').toLowerCase();
+  return lang.startsWith('en')?'en':'it';
+}
+
+const recoveryLang=recoveryLanguage();
+
+function rt(key){
+  return RECOVERY_I18N[recoveryLang]?.[key]
+      ?? RECOVERY_I18N.it[key]
+      ?? key;
+}
+
+function rtf(key,vars={}){
+  return rt(key).replace(/\{(\w+)\}/g,(_,name)=>
+    Object.prototype.hasOwnProperty.call(vars,name)
+      ? vars[name]
+      : `{${name}}`
+  );
+}
+
+document.documentElement.lang=recoveryLang;
+$('recoveryTitle').textContent=rt('title');
+$('recoveryDescription').textContent=rt('description');
+$('recoveryBackupsTitle').textContent=rt('available_backups');
+$('backups').textContent=rt('loading');
+
 const esc=s=>String(s??'')
  .replaceAll('&','&amp;')
  .replaceAll('<','&lt;')
@@ -1739,37 +1819,34 @@ async function loadBackups(){
           <strong>${esc(b.filename)}</strong><br>
           <span class="muted">${esc(b.modified)} · ${bytes(b.size)}</span><br>
           <span class="${b.valid?'ok':'bad'}">
-            ${b.valid?'✓ Backup integro':'⚠ '+esc(b.integrity)}
+            ${b.valid?rt('valid_backup'):'⚠ '+esc(b.integrity)}
           </span>
-          ${b.items!==null?`<div class="muted">${b.items} elementi · ${b.types??'?'} tipologie · ${b.photos??'?'} foto</div>`:''}
+          ${b.items!==null
+            ? `<div class="muted">${b.items} ${rt('items')} · ${b.types??'?'} ${rt('types')} · ${b.photos??'?'} ${rt('photos')}</div>`
+            : ''}
           <div class="actions">
             <a class="btn secondary"
                href="api/backups/download/${encodeURIComponent(b.filename)}">
-               Scarica
+               ${rt('download')}
             </a>
             ${b.valid?`
               <button onclick="restoreBackup('${esc(b.filename)}')">
-                Ripristina
+                ${rt('restore')}
               </button>`:''}
           </div>
         </div>
       `).join('')
-      : '<div class="muted">Nessun backup disponibile.</div>';
+      : `<div class="muted">${rt('no_backups')}</div>`;
 
   }catch(e){
-    $('backups').textContent='Errore: '+e.message;
+    $('backups').textContent=rt('error')+': '+e.message;
   }
 }
 
 async function restoreBackup(name){
-  if(!confirm(
-    'Ripristinare questo backup?\\n\\n'+name+
-    '\\n\\nIl database corrente verrà sostituito.'
-  ))return;
+  if(!confirm(rtf('restore_confirm',{name})))return;
 
-  const confirmText=prompt(
-    'Per confermare il ripristino scrivi:\\n\\nRIPRISTINA'
-  );
+  const confirmText=prompt(rt('restore_keyword'));
 
   if(confirmText!=='RIPRISTINA')return;
 
@@ -1782,15 +1859,15 @@ async function restoreBackup(name){
   const d=await r.json().catch(()=>({}));
 
   if(!r.ok){
-    alert(d.error||'Ripristino non riuscito');
+    alert(d.error||rt('restore_failed'));
     await loadBackups();
     return;
   }
 
   alert(
-    'Backup ripristinato correttamente.\\n\\n'+
-    'Elementi: '+(d.database?.items??'?')+'\\n'+
-    'Integrity check: '+(d.database?.integrity??'?')
+    rt('restore_ok')+'\n\n'+
+    rt('items')+': '+(d.database?.items??'?')+'\n'+
+    rt('integrity')+': '+(d.database?.integrity??'?')
   );
 
   location.reload();
@@ -3518,7 +3595,7 @@ html.ha-theme-linked .search-clear{
 <div class="wrap">
 <header>
   <div>
-    <h1>🏠 Inventario Casa</h1>
+    <h1>🏠 <span data-i18n="app_name">Inventario Casa</span></h1>
     <div class="sub" data-i18n="subtitle">Trova cosa possiedi e dove si trova.</div>
   </div>
   <div class="search">
@@ -3529,7 +3606,9 @@ html.ha-theme-linked .search-clear{
               class="search-clear"
               onclick="clearSearch()"
               aria-label="Cancella ricerca"
-              title="Cancella ricerca">×</button>
+              data-i18n-aria-label="clear_search"
+              title="Cancella ricerca"
+              data-i18n-title="clear_search">×</button>
     </div>
     <button type="button" class="secondary" onclick="load()">🔎</button>
     <select id="languageSelect"
@@ -3581,43 +3660,43 @@ html.ha-theme-linked .search-clear{
 
     <div id="add-position" class="tab">
       <div class="form">
-        <input id="aEnv" list="envs" placeholder="Ambiente, es. Cantina">
-        <input id="aFurn" list="furns" placeholder="Mobile/Scaffale">
-        <input id="aShelf" list="shelves" placeholder="Ripiano/Cassetto">
-        <input id="aCont" list="containers" placeholder="Contenitore">
-        <input id="aCode" class="full" placeholder="Codice contenitore, es. C12">
+        <input id="aEnv" list="envs" data-i18n-placeholder="environment_example" placeholder="Ambiente, es. Cantina">
+        <input id="aFurn" list="furns" data-i18n-placeholder="furniture_placeholder" placeholder="Mobile/Scaffale">
+        <input id="aShelf" list="shelves" data-i18n-placeholder="shelf_placeholder" placeholder="Ripiano/Cassetto">
+        <input id="aCont" list="containers" data-i18n-placeholder="container_placeholder" placeholder="Contenitore">
+        <input id="aCode" class="full" data-i18n-placeholder="container_code_example" placeholder="Codice contenitore, es. C12">
       </div>
     </div>
 
     <div id="add-photos" class="tab">
-      <div class="notice">Le foto si possono caricare subito dopo aver salvato l'elemento. Il programma aprirà automaticamente la scheda completa.</div>
+      <div class="notice" data-i18n="photos_after_save">Le foto si possono caricare subito dopo aver salvato l'elemento. Il programma aprirà automaticamente la scheda completa.</div>
     </div>
 
     <div id="add-notes" class="tab">
       <div class="form">
-        <textarea id="aDesc" class="full" placeholder="Descrizione"></textarea>
-        <textarea id="aNotes" class="full" placeholder="Note"></textarea>
-        <input id="aTags" class="full" placeholder="Tag, separati da virgola">
+        <textarea id="aDesc" class="full" data-i18n-placeholder="description" placeholder="Descrizione"></textarea>
+        <textarea id="aNotes" class="full" data-i18n-placeholder="notes" placeholder="Note"></textarea>
+        <input id="aTags" class="full" data-i18n-placeholder="tags_comma" placeholder="Tag, separati da virgola">
       </div>
     </div>
 
-    <div class="savebar"><button onclick="createItem()">Salva elemento</button></div>
+    <div class="savebar"><button data-i18n="save_item" onclick="createItem()">Salva elemento</button></div>
     </div>
   </div>
 
   <div class="panel">
     <div class="items-head">
-      <h2 id="itemsTitle">📦 Elementi</h2>
+      <h2 id="itemsTitle" data-i18n="inventory_owned">📦 Cosa possiedo</h2>
       <div class="items-head-controls">
         <label class="items-group-wrap" title="Come raggruppare l'elenco">
-          <span>Raggruppa</span>
+          <span data-i18n="group_by">Raggruppa</span>
           <select id="itemsGroupBy" onchange="changeItemsGrouping(this.value)">
-            <option value="type">Tipologia</option>
+            <option value="type" data-i18n="type">Tipologia</option>
             <option value="environment">Ambiente</option>
-            <option value="none">Nessuno</option>
+            <option value="none" data-i18n="none">Nessuno</option>
           </select>
         </label>
-        <div class="items-page-size" title="Caricamento progressivo">50 per volta</div>
+        <div class="items-page-size" data-i18n-title="progressive_loading" title="Caricamento progressivo" data-i18n="per_page_50">50 per volta</div>
       </div>
     </div>
     <div id="itemsListInfo" class="items-list-info"></div>
@@ -3629,32 +3708,32 @@ html.ha-theme-linked .search-clear{
   <div id="typePanel" class="panel type-panel">
     <div class="type-panel-head">
       <div class="types-header-row">
-  <h2>🏷️ Tipologie</h2>
-  <button type="button" class="types-add-top" onclick="openTypeDialog()" title="Nuova tipologia">
+  <h2>🏷️ <span data-i18n="types">Tipologie</span></h2>
+  <button type="button" class="types-add-top" onclick="openTypeDialog()" title="Nuova tipologia" data-i18n-title="new_type">
     <span class="types-add-icon">＋</span>
-    <span class="types-add-label">Aggiungi</span>
+    <span class="types-add-label" data-i18n="add">Aggiungi</span>
   </button>
 </div>
-      <button id="typeCollapseBtn" class="secondary small" onclick="toggleTypePanel()" title="Riduci/espandi tipologie">▾</button>
+      <button id="typeCollapseBtn" class="secondary small" onclick="toggleTypePanel()" title="Riduci/espandi tipologie" data-i18n-title="toggle_types">▾</button>
     </div>
     <div class="type-panel-body">
       <div class="type-tools">
-        <input id="typeSearch" placeholder="Cerca tipologia…" oninput="renderTypes()">
+        <input id="typeSearch" data-i18n-placeholder="search_type" placeholder="Cerca tipologia…" oninput="renderTypes()">
       </div>
       <div id="typeList"></div>
-      <button class="type-add" onclick="openTypeDialog()">➕ Nuova tipologia</button>
+      <button class="type-add" onclick="openTypeDialog()">➕ <span data-i18n="new_type">Nuova tipologia</span></button>
     </div>
   </div>
 
   <div class="panel">
     <div class="backup-panel-head">
-      <h2>🛟 Backup database</h2>
+      <h2>🗄️ <span data-i18n="backup_database">Backup database</span></h2>
       <button type="button"
               class="secondary small"
-              onclick="openBackupDialog()">Gestisci</button>
+              onclick="openBackupDialog()" data-i18n="manage">Gestisci</button>
     </div>
-    <div class="hint" style="margin-top:8px">
-      Backup e ripristino dell'archivio Inventario Casa.
+    <div class="hint" style="margin-top:8px" data-i18n="backup_description">
+      Crea copie di sicurezza e ripristina il database di Inventario Casa.
     </div>
   </div>
 </aside>
@@ -3673,18 +3752,20 @@ html.ha-theme-linked .search-clear{
     <button type="button"
             class="dialog-close-btn"
             onclick="closeBackupDialog()"
+            data-i18n-aria-label="close"
+            data-i18n-title="close"
             aria-label="Chiudi"
             title="Chiudi">×</button>
 
-    <h2>🛟 Backup database</h2>
+    <h2>🗄️ <span data-i18n="backup_database">Backup database</span></h2>
 
     <div class="backup-info">
       <div class="backup-info-icon">ℹ️</div>
       <div>
-        <strong>Backup sicuri e persistenti</strong><br>
-        I file vengono conservati in
+        <strong data-i18n="safe_persistent_backups">Backup sicuri e persistenti</strong><br>
+        <span data-i18n="backup_storage_before">I file vengono conservati in</span>
         <code>/media/inventario_casa/db_backups/</code>
-        e restano disponibili anche dopo la disinstallazione dell'App.
+        <span data-i18n="backup_storage_after">e restano disponibili anche dopo la disinstallazione dell'App.</span>
       </div>
     </div>
 
@@ -3693,24 +3774,25 @@ html.ha-theme-linked .search-clear{
             onclick="createManualBackup()">
       <span class="backup-create-icon">＋</span>
       <span>
-        <strong>Crea backup adesso</strong>
-        <small>Salva una copia del database corrente</small>
+        <strong data-i18n="create_backup_now">Crea backup adesso</strong>
+        <small data-i18n="save_current_database">Salva una copia del database corrente</small>
       </span>
     </button>
 
     <div class="backup-list-head">
-      <strong>🗄️ Backup disponibili</strong>
+      <strong>🗄️ <span data-i18n="available_backups">Backup disponibili</span></strong>
       <span id="backupCount" class="backup-count"></span>
     </div>
 
     <div id="backupList"
-         class="backup-list">
+         class="backup-list"
+         data-i18n="loading">
       Caricamento…
     </div>
 
     <div class="savebar">
       <button class="secondary"
-              onclick="closeBackupDialog()">Chiudi</button>
+              onclick="closeBackupDialog()" data-i18n="close">Chiudi</button>
     </div>
   </div>
 </div>
@@ -3719,7 +3801,8 @@ html.ha-theme-linked .search-clear{
 
 <div id="typeDlg" class="dialogbg">
   <div class="dialog">
-    <button type="button" class="dialog-close-btn" onclick="closeTypeDialog()" aria-label="Chiudi" title="Chiudi">×</button>
+    <button type="button" class="dialog-close-btn" onclick="closeTypeDialog()" aria-label="Chiudi" data-i18n-aria-label="close"
+            title="Chiudi" data-i18n-title="close">×</button>
     <h2 id="typeDlgTitle">🏷️ Tipologia</h2>
     <div class="form">
       <select id="tIcon">
@@ -3727,23 +3810,23 @@ html.ha-theme-linked .search-clear{
         <option>💿</option><option>🎮</option><option>🔌</option><option>🛠️</option>
         <option>🧰</option><option>👕</option><option>🧸</option><option>📷</option><option>🏷️</option>
       </select>
-      <input id="tIconCustom" placeholder="Oppure incolla un'emoji">
-      <input id="tName" class="full" placeholder="Nome tipologia">
+      <input id="tIconCustom" data-i18n-placeholder="paste_emoji" placeholder="Oppure incolla un'emoji">
+      <input id="tName" class="full" data-i18n-placeholder="type_name" placeholder="Nome tipologia">
       <label class="full">Sottogruppo nell’elenco
-        <select id="tSubgroupField"><option value="">Nessuno</option></select>
-        <span class="hint">Esempio: per Fumetto scegli Serie. Verrà mostrato Fumetti → Serie → elementi.</span>
+        <select id="tSubgroupField"><option value="" data-i18n="none">Nessuno</option></select>
+        <span class="hint" data-i18n="subgroup_example">Esempio: per Fumetto scegli Serie. Verrà mostrato Fumetti → Serie → elementi.</span>
       </label>
     </div>
     <br>
-    <b>Campi personalizzati</b>
-    <div class="hint">Puoi aggiungere, rinominare, ordinare, nascondere e riattivare campi senza perdere i dati esistenti.</div>
+    <b data-i18n="custom_fields">Campi personalizzati</b>
+    <div class="hint" data-i18n="type_fields_hint">Puoi aggiungere, rinominare, ordinare, nascondere e riattivare campi senza perdere i dati esistenti.</div>
     <br>
     <div id="typeFields"></div>
-    <button class="secondary" onclick="addFieldRow()">＋ Aggiungi campo</button>
+    <button class="secondary" data-i18n="add_field" onclick="addFieldRow()">＋ Aggiungi campo</button>
     <div class="savebar">
-      <button id="deleteTypeBtn" class="danger dialog-danger" onclick="deleteType()" style="display:none">🗑️ Elimina</button>
-      <button class="secondary" onclick="closeTypeDialog()">Annulla</button>
-      <button onclick="saveType()">Salva tipologia</button>
+      <button id="deleteTypeBtn" class="danger dialog-danger" onclick="deleteType()" style="display:none">🗑️ <span data-i18n="delete">Elimina</span></button>
+      <button class="secondary" data-i18n="cancel" onclick="closeTypeDialog()">Annulla</button>
+      <button data-i18n="save_type" onclick="saveType()">Salva tipologia</button>
     </div>
   </div>
 </div>
@@ -3751,27 +3834,29 @@ html.ha-theme-linked .search-clear{
 
 <div id="viewDlg" class="dialogbg" onclick="if(event.target===this) closeItemPreview()">
   <div class="dialog item-preview-dialog">
-    <button type="button" class="dialog-close-btn" onclick="closeItemPreview()" aria-label="Chiudi" title="Chiudi">×</button>
-    <h2 id="viewTitle">📦 Dettagli elemento</h2>
+    <button type="button" class="dialog-close-btn" onclick="closeItemPreview()" aria-label="Chiudi" data-i18n-aria-label="close"
+            title="Chiudi" data-i18n-title="close">×</button>
+    <h2 id="viewTitle">📦 <span data-i18n="item_details">Dettagli elemento</span></h2>
     <div id="viewPhotos" class="item-preview-photos"></div>
     <div id="viewDetails" class="item-preview-list"></div>
     <div class="savebar">
-      <button class="secondary" onclick="closeItemPreview()">Chiudi</button>
-      <button onclick="modifyPreviewItem()">✏️ Modifica</button>
+      <button class="secondary" onclick="closeItemPreview()" data-i18n="close">Chiudi</button>
+      <button onclick="modifyPreviewItem()">✏️ <span data-i18n="edit">Modifica</span></button>
     </div>
   </div>
 </div>
 
 <div id="editDlg" class="dialogbg">
   <div class="dialog">
-    <button type="button" class="dialog-close-btn" onclick="closeEdit()" aria-label="Chiudi" title="Chiudi">×</button>
-    <h2>✏️ Scheda elemento</h2>
+    <button type="button" class="dialog-close-btn" onclick="closeEdit()" aria-label="Chiudi" data-i18n-aria-label="close"
+            title="Chiudi" data-i18n-title="close">×</button>
+    <h2>✏️ <span data-i18n="item_sheet">Scheda elemento</span></h2>
     <div class="tabs">
-      <button class="tabbtn active" onclick="showTab('edit','general',this)">Generale</button>
-      <button class="tabbtn" onclick="showTab('edit','details',this)">Dettagli</button>
-      <button class="tabbtn" onclick="showTab('edit','position',this)">Posizione</button>
-      <button class="tabbtn" data-tab="photos" onclick="showTab('edit','photos',this)">Foto</button>
-      <button class="tabbtn" onclick="showTab('edit','notes',this)">Note</button>
+      <button class="tabbtn active" data-i18n="general" onclick="showTab('edit','general',this)">Generale</button>
+      <button class="tabbtn" data-i18n="details" onclick="showTab('edit','details',this)">Dettagli</button>
+      <button class="tabbtn" data-i18n="position" onclick="showTab('edit','position',this)">Posizione</button>
+      <button class="tabbtn" data-tab="photos" data-i18n="photos" onclick="showTab('edit','photos',this)">Foto</button>
+      <button class="tabbtn" data-i18n="notes" onclick="showTab('edit','notes',this)">Note</button>
     </div>
 
     <div id="edit-general" class="tab active">
@@ -3788,24 +3873,32 @@ html.ha-theme-linked .search-clear{
 
     <div id="edit-position" class="tab">
       <div class="form">
-        <input id="eEnv" list="envs" placeholder="Ambiente">
-        <input id="eFurn" list="furns" placeholder="Mobile/Scaffale">
-        <input id="eShelf" list="shelves" placeholder="Ripiano/Cassetto">
-        <input id="eCont" list="containers" placeholder="Contenitore">
-        <input id="eCode" class="full" placeholder="Codice contenitore">
+        <input id="eEnv" list="envs" data-i18n-placeholder="environment" placeholder="Ambiente">
+        <input id="eFurn" list="furns" data-i18n-placeholder="furniture_placeholder" placeholder="Mobile/Scaffale">
+        <input id="eShelf" list="shelves" data-i18n-placeholder="shelf_placeholder" placeholder="Ripiano/Cassetto">
+        <input id="eCont" list="containers" data-i18n-placeholder="container_placeholder" placeholder="Contenitore">
+        <input id="eCode" class="full" data-i18n-placeholder="container_code" placeholder="Codice contenitore">
       </div>
     </div>
 
     <div id="edit-photos" class="tab">
       <div class="form">
-        <input id="photoFile" type="file" accept="image/*">
+        <div class="photo-file-picker">
+          <input id="photoFile" type="file" accept="image/*" hidden
+                 onchange="updatePhotoFileName(this)">
+          <button type="button" class="secondary"
+                  onclick="$('photoFile').click()"
+                  data-i18n="choose_file">Scegli file</button>
+          <span id="photoFileName" class="hint"
+                data-i18n="no_file_selected">Nessun file selezionato</span>
+        </div>
         <select id="photoProfile">
-          <option value="auto">Automatico</option>
+          <option value="auto" data-i18n="automatic">Automatico</option>
           <option value="standard">Standard</option>
-          <option value="collectible">Fumetti/collezionabili</option>
+          <option value="collectible" data-i18n="collectibles">Fumetti/collezionabili</option>
         </select>
-        <input id="photoLabel" class="full" placeholder="Etichetta foto, es. Fronte, Retro, Costa, Difetto">
-        <button onclick="uploadPhoto()">Carica foto</button>
+        <input id="photoLabel" class="full" data-i18n-placeholder="photo_label" placeholder="Etichetta foto, es. Fronte, Retro, Costa, Difetto">
+        <button onclick="uploadPhoto()" data-i18n="upload_photo">Carica foto</button>
       </div>
       <br>
       <div id="photoGrid" class="photo-grid"></div>
@@ -3813,16 +3906,16 @@ html.ha-theme-linked .search-clear{
 
     <div id="edit-notes" class="tab">
       <div class="form">
-        <textarea id="eDesc" class="full" placeholder="Descrizione"></textarea>
-        <textarea id="eNotes" class="full" placeholder="Note"></textarea>
-        <input id="eTags" class="full" placeholder="Tag">
+        <textarea id="eDesc" class="full" data-i18n-placeholder="description" placeholder="Descrizione"></textarea>
+        <textarea id="eNotes" class="full" data-i18n-placeholder="notes" placeholder="Note"></textarea>
+        <input id="eTags" class="full" data-i18n-placeholder="tags" placeholder="Tag">
       </div>
     </div>
 
     <div class="savebar">
-      <button class="danger dialog-danger" onclick="deleteEditingItem()">🗑️ Elimina</button>
-      <button class="secondary" onclick="closeEdit()">Chiudi</button>
-      <button onclick="saveItem()">Salva modifiche</button>
+      <button class="danger dialog-danger" onclick="deleteEditingItem()">🗑️ <span data-i18n="delete">Elimina</span></button>
+      <button class="secondary" onclick="closeEdit()" data-i18n="close">Chiudi</button>
+      <button data-i18n="save_changes" onclick="saveItem()">Salva modifiche</button>
     </div>
   </div>
 </div>
@@ -3831,18 +3924,19 @@ html.ha-theme-linked .search-clear{
 
 <div id="barcodeDlg" class="dialogbg" onclick="if(event.target===this) stopBarcodeScan()">
   <div class="dialog barcode-dialog">
-    <button type="button" class="dialog-close-btn" onclick="stopBarcodeScan()" aria-label="Chiudi" title="Chiudi">×</button>
+    <button type="button" class="dialog-close-btn" onclick="stopBarcodeScan()" aria-label="Chiudi" data-i18n-aria-label="close"
+            title="Chiudi" data-i18n-title="close">×</button>
     <h2>📷 Scansiona ISBN / EAN</h2>
-    <div class="hint">La scansione con fotocamera richiede una connessione HTTPS. Se la scansione live non è disponibile, puoi scattare una foto del codice oppure inserirlo manualmente.</div>
+    <div class="hint" data-i18n="scanner_https_hint">La scansione con fotocamera richiede una connessione HTTPS. Se la scansione live non è disponibile, puoi scattare una foto del codice oppure inserirlo manualmente.</div>
     <br>
     <div class="barcode-reader">
       <video id="barcodeVideo" playsinline muted></video>
       <div class="barcode-guide"></div>
     </div>
-    <div id="barcodeStatus" class="barcode-status">Avvio fotocamera…</div>
+    <div id="barcodeStatus" class="barcode-status" data-i18n="starting_camera">Avvio fotocamera…</div>
     <div class="barcode-actions">
-      <button id="barcodePhotoBtn" type="button" class="secondary" onclick="chooseBarcodePhoto()">📸 Scatta foto del codice</button>
-      <button type="button" class="secondary" onclick="stopBarcodeScan()">Chiudi</button>
+      <button id="barcodePhotoBtn" type="button" class="secondary" onclick="chooseBarcodePhoto()">📸 <span data-i18n="take_code_photo">Scatta foto del codice</span></button>
+      <button type="button" class="secondary" onclick="stopBarcodeScan()" data-i18n="close">Chiudi</button>
     </div>
     <input id="barcodePhotoInput" type="file" accept="image/*" capture="environment" hidden onchange="scanBarcodePhoto(this)">
   </div>
@@ -3850,9 +3944,13 @@ html.ha-theme-linked .search-clear{
 
 <div id="photoLightbox" class="photo-lightbox"
      onclick="if(event.target===this) closePhoto()"
-     role="dialog" aria-modal="true" aria-label="Anteprima foto">
-  <button class="photo-lightbox-close" type="button" onclick="closePhoto()" aria-label="Chiudi">×</button>
-  <img id="photoLightboxImg" alt="Foto elemento">
+     role="dialog" aria-modal="true"
+     aria-label="Anteprima foto"
+     data-i18n-aria-label="photo_preview">
+  <button class="photo-lightbox-close" type="button" onclick="closePhoto()" aria-label="Chiudi"
+          data-i18n-aria-label="close">×</button>
+  <img id="photoLightboxImg" alt="Foto elemento"
+       data-i18n-alt="item_photo">
 </div>
 
 <script>
@@ -3900,15 +3998,384 @@ const I18N={
   }
 };
 
+
+Object.assign(I18N.it,{  choose_file:'Scegli file',
+  no_file_selected:'Nessun file selezionato',
+  automatic:'Automatico',
+  collectibles:'Fumetti/collezionabili',
+
+  clear_search:'Cancella ricerca',
+  toggle_types:'Riduci/espandi tipologie',
+  custom_fields:'Campi personalizzati',
+  photo_preview:'Anteprima foto',
+  item_photo:'Foto elemento',
+  scan_code_camera:'Scansiona codice con la fotocamera',
+  camera_https_required:'Fotocamera non disponibile: è richiesta una connessione HTTPS',
+
+  error:'Errore',
+  app_name:'Inventario Casa',
+
+  items_total_one:'{count} elemento totale',
+  items_total_many:'{count} elementi totali',
+  inventory_results:'🔎 Risultati',
+  inventory_owned:'📦 Cosa possiedo',
+  no_items:'Nessun elemento trovato.',
+  loading_items:'Caricamento elementi…',
+  open_group_load:'Apri il gruppo per caricare gli elementi.',
+  group:'Gruppo',
+
+  no_fields:'Nessun campo.',
+  no_custom_fields:'Questa tipologia non ha campi personalizzati.',
+  yes:'Sì',
+  no:'No',
+  scan_code:'📷 Scansiona codice',
+  search_data:'🔎 Cerca dati',
+
+  code_detected:'✓ Codice rilevato: {code} — ora puoi premere Cerca dati.',
+  camera_https_manual:'🔒 Fotocamera non disponibile: è richiesta una connessione HTTPS. Inserisci il codice manualmente.',
+  camera_starting:'Avvio fotocamera…',
+  camera_frame_fallback:'Inquadra il codice nel riquadro verde. Modalità compatibile attiva.',
+  camera_frame:'Inquadra il codice a barre dentro il riquadro verde.',
+  camera_live_unavailable:'La fotocamera live non è disponibile. Premi “📸 Scatta foto del codice” oppure inserisci il codice manualmente.',
+  camera_https:'🔒 Fotocamera non disponibile: è richiesta una connessione HTTPS.',
+  scan_cancelled:'Scansione annullata. Puoi inserire il codice manualmente.',
+  analysing_code_photo:'Analizzo la foto del codice…',
+  code_not_found_photo:'Nessun ISBN/EAN rilevato nella foto. Riprova avvicinandoti al codice oppure inseriscilo manualmente.',
+  code_photo_error:'Impossibile leggere il codice dalla foto.',
+  enter_code_first:'Inserisci prima il codice ISBN / EAN.',
+  searching:'⏳ Ricerca...',
+  data_found_confirm:'Dati trovati su {source}:\\n\\n{lines}\\n\\nCompilare i campi attualmente vuoti?\\nI campi già compilati NON verranno sovrascritti.',
+  data_not_applied:'Dati trovati, non applicati.',
+  fields_filled:'✓ Compilati {count} campi vuoti',
+  no_empty_fields:'Nessun campo vuoto da compilare.',
+  search_failed:'Ricerca non riuscita.',
+
+  item_type:'Tipologia',
+  quantity:'Quantità',
+  environment:'Ambiente',
+  furniture:'Mobile / Scaffale',
+  shelf:'Ripiano / Cassetto',
+  container:'Contenitore',
+  container_code:'Codice contenitore',
+  description:'Descrizione',
+  tags:'Tag',
+  notes:'Note',
+  item_details:'Dettagli elemento',
+  photos:'Foto',
+  open_photo:'Apri foto',
+  more_photos:'+ altre {count} foto nella scheda Modifica',
+  no_photo_add:'📷 Nessuna foto · Aggiungi',
+  no_additional_details:'Nessun dettaglio aggiuntivo.',
+  delete_item_confirm:'Eliminare questo elemento?',
+  delete_item_named_confirm:'Eliminare definitivamente “{name}”?',
+  delete_item_unnamed_confirm:'Eliminare definitivamente?',
+  delete:'Elimina',
+  no_photos:'Nessuna foto.',
+  choose_photo:'Scegli una foto',
+  photo_upload_error:'Errore caricamento foto',
+  delete_photo_confirm:'Eliminare questa foto?',
+
+  none:'Nessuno',
+  field:'Campo',
+  new_type:'🏷️ Nuova tipologia',
+  edit_type:'✏️ Modifica tipologia',
+  field_name:'Nome campo',
+  field_text:'Testo',
+  field_number:'Numero',
+  field_date:'Data',
+  field_long_text:'Testo lungo',
+  field_list:'Elenco',
+  field_yes_no:'Sì/No',
+  required_short:'obbl.',
+  reactivate:'Riattiva',
+  hide:'Nascondi',
+  list_options_placeholder:'Opzioni separate da virgola (solo per Elenco)',
+  field_example_placeholder:'Testo di esempio, es. HDMI, USB, Ethernet...',
+  this_type:'questa tipologia',
+  range_of_total:'{first}–{last} di {total}',
+  delete_type_confirm:"Eliminare definitivamente la tipologia \"{name}\"?\\n\\nL'operazione è consentita solo se nessun elemento la sta usando.",
+
+  loading_backups:'Caricamento backup…',
+  schema:'Schema',
+  backup_valid:'Integro',
+  backup_items:'elementi',
+  backup_invalid:'Backup non valido',
+  download:'⬇ Scarica',
+  restore:'↩ Ripristina',
+  no_backups:'Nessun backup disponibile.',
+  create_backup_confirm:'Creare adesso una copia di sicurezza del database?',
+  backup_created:'Backup creato correttamente:\\n\\n{filename}',
+  restore_backup_confirm:'Ripristinare questo backup?\\n\\n{filename}\\n\\nIl database attuale verrà sostituito. Prima del ripristino Inventario Casa proverà a crearne un ulteriore backup di sicurezza.',
+  restore_type_word:'Per confermare scrivi esattamente:\\n\\nRIPRISTINA',
+  restore_cancelled:'Ripristino annullato.',
+  database_restored:'Database ripristinato correttamente.',
+  items:'Elementi',
+  types:'Tipologie',
+  integrity_check:'Integrity check',
+  previous_db_backup:'Backup del DB precedente:',
+  previous_db_warning:'Nota: non è stato possibile verificare il DB precedente:',
+  restore_failed:'Ripristino non riuscito:',
+  selected_backup_kept:'Il backup selezionato non viene eliminato.',
+
+  save_item:'Salva elemento',
+  group_by:'Raggruppa',
+  type:'Tipologia',
+  per_page_50:'50 per volta',
+  field_count_one:'campo',
+  field_count_many:'campi',
+  no_types_found:'Nessuna tipologia trovata.',
+  open_type:'Apri {name}',
+  expand_types:'Espandi tipologie',
+  collapse_types:'Riduci tipologie',
+  open_item:'Apri {name}',
+  first:'Primi',
+  previous:'Precedenti',
+  next:'Successivi',
+  last:'Ultimi',
+  loading_subgroups:'Carico i sottogruppi…',
+  open_subgroup_load:'Apri il sottogruppo per caricare gli elementi.',
+  barcode_read_error:'Errore durante la lettura del barcode.',
+  photos_after_save:"Le foto si possono caricare subito dopo aver salvato l'elemento. Il programma aprirà automaticamente la scheda completa.",
+  progressive_loading:'Caricamento progressivo',
+  subgroup_example:'Esempio: per Fumetto scegli Serie. Verrà mostrato Fumetti → Serie → elementi.',
+  type_fields_hint:'Puoi aggiungere, rinominare, ordinare, nascondere e riattivare campi senza perdere i dati esistenti.',
+  item_sheet:'Scheda elemento',
+  upload_photo:'Carica foto',
+  scanner_https_hint:'La scansione con fotocamera richiede una connessione HTTPS. Se la scansione live non è disponibile, puoi scattare una foto del codice oppure inserirlo manualmente.',
+  starting_camera:'Avvio fotocamera…',
+  take_code_photo:'Scatta foto del codice',
+  add:'Aggiungi',
+  search_type:'Cerca tipologia…',
+  backup_database:'Backup e ripristino',
+  manage:'Gestisci',
+  backup_description:'Crea copie di sicurezza e ripristina il database di Inventario Casa.',
+  safe_persistent_backups:'Backup sicuri e persistenti',
+  create_backup_now:'Crea backup adesso',
+  save_current_database:'Salva una copia del database corrente',
+  available_backups:'Backup disponibili',
+  backup_storage_before:'I file vengono conservati in',
+  backup_storage_after:"e restano disponibili anche dopo la disinstallazione dell'App.",
+  loading:'Caricamento…',
+  close:'Chiudi',
+  paste_emoji:'Oppure incolla un’emoji',
+  type_name:'Nome tipologia',
+  add_field:'＋ Aggiungi campo',
+  cancel:'Annulla',
+  save_type:'Salva tipologia',
+  edit:'Modifica',
+  photo_label:'Etichetta foto, es. Fronte, Retro, Costa, Difetto',
+  save_changes:'Salva modifiche',
+  environment_example:'Ambiente, es. Cantina',
+  furniture_placeholder:'Mobile/Scaffale',
+  shelf_placeholder:'Ripiano/Cassetto',
+  container_placeholder:'Contenitore',
+  container_code_example:'Codice contenitore, es. C12',
+  tags_comma:'Tag, separati da virgola'
+});
+
+Object.assign(I18N.en,{  choose_file:'Choose file',
+  no_file_selected:'No file selected',
+  automatic:'Automatic',
+  collectibles:'Comics/collectibles',
+
+  clear_search:'Clear search',
+  toggle_types:'Collapse/expand types',
+  custom_fields:'Custom fields',
+  photo_preview:'Photo preview',
+  item_photo:'Item photo',
+  scan_code_camera:'Scan code with camera',
+  camera_https_required:'Camera unavailable: an HTTPS connection is required',
+
+  error:'Error',
+  app_name:'Home Inventory',
+
+  items_total_one:'{count} item total',
+  items_total_many:'{count} items total',
+  inventory_results:'🔎 Results',
+  inventory_owned:'📦 What I own',
+  no_items:'No items found.',
+  loading_items:'Loading items…',
+  open_group_load:'Open the group to load the items.',
+  group:'Group',
+
+  no_fields:'No fields.',
+  no_custom_fields:'This type has no custom fields.',
+  yes:'Yes',
+  no:'No',
+  scan_code:'📷 Scan code',
+  search_data:'🔎 Search data',
+
+  code_detected:'✓ Code detected: {code} — you can now press Search data.',
+  camera_https_manual:'🔒 Camera unavailable: an HTTPS connection is required. Enter the code manually.',
+  camera_starting:'Starting camera…',
+  camera_frame_fallback:'Frame the code inside the green box. Compatibility mode is active.',
+  camera_frame:'Frame the barcode inside the green box.',
+  camera_live_unavailable:'The live camera is unavailable. Press “📸 Take a photo of the code” or enter the code manually.',
+  camera_https:'🔒 Camera unavailable: an HTTPS connection is required.',
+  scan_cancelled:'Scan cancelled. You can enter the code manually.',
+  analysing_code_photo:'Analysing the code photo…',
+  code_not_found_photo:'No ISBN/EAN was detected in the photo. Try moving closer to the code or enter it manually.',
+  code_photo_error:'Unable to read the code from the photo.',
+  enter_code_first:'Enter the ISBN / EAN code first.',
+  searching:'⏳ Searching...',
+  data_found_confirm:'Data found on {source}:\\n\\n{lines}\\n\\nFill the currently empty fields?\\nFields that already contain data will NOT be overwritten.',
+  data_not_applied:'Data found, not applied.',
+  fields_filled:'✓ Filled {count} empty fields',
+  no_empty_fields:'No empty fields to fill.',
+  search_failed:'Search failed.',
+
+  item_type:'Type',
+  quantity:'Quantity',
+  environment:'Location',
+  furniture:'Furniture / Shelf unit',
+  shelf:'Shelf / Drawer',
+  container:'Container',
+  container_code:'Container code',
+  description:'Description',
+  tags:'Tags',
+  notes:'Notes',
+  item_details:'Item details',
+  photos:'Photos',
+  open_photo:'Open photo',
+  more_photos:'+ {count} more photos in the Edit tab',
+  no_photo_add:'📷 No photos · Add',
+  no_additional_details:'No additional details.',
+  delete_item_confirm:'Delete this item?',
+  delete_item_named_confirm:'Permanently delete “{name}”?',
+  delete_item_unnamed_confirm:'Permanently delete this item?',
+  delete:'Delete',
+  no_photos:'No photos.',
+  choose_photo:'Choose a photo',
+  photo_upload_error:'Photo upload error',
+  delete_photo_confirm:'Delete this photo?',
+
+  none:'None',
+  field:'Field',
+  new_type:'🏷️ New type',
+  edit_type:'✏️ Edit type',
+  field_name:'Field name',
+  field_text:'Text',
+  field_number:'Number',
+  field_date:'Date',
+  field_long_text:'Long text',
+  field_list:'List',
+  field_yes_no:'Yes/No',
+  required_short:'required',
+  reactivate:'Reactivate',
+  hide:'Hide',
+  list_options_placeholder:'Comma-separated options (List only)',
+  field_example_placeholder:'Example text, e.g. HDMI, USB, Ethernet...',
+  this_type:'this type',
+  range_of_total:'{first}–{last} of {total}',
+  delete_type_confirm:'Permanently delete type "{name}"?\\n\\nThis operation is allowed only if no item is using it.',
+
+  loading_backups:'Loading backups…',
+  schema:'Schema',
+  backup_valid:'Valid',
+  backup_items:'items',
+  backup_invalid:'Invalid backup',
+  download:'⬇ Download',
+  restore:'↩ Restore',
+  no_backups:'No backups available.',
+  create_backup_confirm:'Create a database backup now?',
+  backup_created:'Backup created successfully:\\n\\n{filename}',
+  restore_backup_confirm:'Restore this backup?\\n\\n{filename}\\n\\nThe current database will be replaced. Before restoring it, Inventario Casa will try to create an additional safety backup.',
+  restore_type_word:'To confirm, type exactly:\\n\\nRIPRISTINA',
+  restore_cancelled:'Restore cancelled.',
+  database_restored:'Database restored successfully.',
+  items:'Items',
+  types:'Types',
+  integrity_check:'Integrity check',
+  previous_db_backup:'Backup of the previous database:',
+  previous_db_warning:'Note: the previous database could not be verified:',
+  restore_failed:'Restore failed:',
+  selected_backup_kept:'The selected backup will not be deleted.',
+
+  save_item:'Save item',
+  group_by:'Group by',
+  type:'Type',
+  add:'Add',
+  search_type:'Search types…',
+  per_page_50:'50 at a time',
+  field_count_one:'field',
+  field_count_many:'fields',
+  no_types_found:'No types found.',
+  open_type:'Open {name}',
+  expand_types:'Expand types',
+  collapse_types:'Collapse types',
+  open_item:'Open {name}',
+  first:'First',
+  previous:'Previous',
+  next:'Next',
+  last:'Last',
+  loading_subgroups:'Loading subgroups…',
+  open_subgroup_load:'Open the subgroup to load the items.',
+  barcode_read_error:'Error while reading the barcode.',
+  photos_after_save:'Photos can be uploaded immediately after saving the item. The program will automatically open the full item page.',
+  progressive_loading:'Progressive loading',
+  subgroup_example:'Example: for Comics choose Series. The view will show Comics → Series → items.',
+  type_fields_hint:'You can add, rename, reorder, hide, and reactivate fields without losing existing data.',
+  item_sheet:'Item page',
+  upload_photo:'Upload photo',
+  scanner_https_hint:'Camera scanning requires an HTTPS connection. If live scanning is unavailable, you can take a photo of the code or enter it manually.',
+  starting_camera:'Starting camera…',
+  take_code_photo:'Take photo of the code',
+  backup_database:'Backup & Restore',
+  manage:'Manage',
+  backup_description:'Create safety backups and restore the Home Inventory database.',
+  safe_persistent_backups:'Safe and persistent backups',
+  create_backup_now:'Create backup now',
+  save_current_database:'Save a copy of the current database',
+  available_backups:'Available backups',
+  backup_storage_before:'Files are stored in',
+  backup_storage_after:'and remain available even after uninstalling the App.',
+  loading:'Loading…',
+  close:'Close',
+  paste_emoji:'Or paste an emoji',
+  type_name:'Type name',
+  add_field:'＋ Add field',
+  cancel:'Cancel',
+  save_type:'Save type',
+  edit:'Edit',
+  photo_label:'Photo label, e.g. Front, Back, Spine, Defect',
+  save_changes:'Save changes',
+  environment_example:'Location, e.g. Cellar',
+  furniture_placeholder:'Furniture / Shelf unit',
+  shelf_placeholder:'Shelf / Drawer',
+  container_placeholder:'Container',
+  container_code_example:'Container code, e.g. C12',
+  tags_comma:'Tags, separated by commas'
+});
+
 const LANGUAGE_STORAGE_KEY='inventario_language';
 
 function detectInitialLanguage(){
+  // 1. Preferenza scelta manualmente dall'utente.
   const saved=localStorage.getItem(LANGUAGE_STORAGE_KEY);
   if(saved && I18N[saved]) return saved;
 
+  // 2. Lingua dell'interfaccia Home Assistant, quando accessibile.
+  try{
+    if(window.parent && window.parent!==window){
+      const haLanguage=(
+        window.parent.document.documentElement.lang||''
+      ).toLowerCase();
+
+      if(haLanguage.startsWith('it')) return 'it';
+      if(haLanguage.startsWith('en')) return 'en';
+    }
+  }catch(e){
+    // L'accesso al documento padre può essere bloccato:
+    // in quel caso usiamo normalmente la lingua del browser.
+  }
+
+  // 3. Lingua del browser/dispositivo.
   const browserLanguage=(navigator.language||'it').toLowerCase();
+
+  if(browserLanguage.startsWith('it')) return 'it';
   if(browserLanguage.startsWith('en')) return 'en';
 
+  // 4. Lingua predefinita per quelle non ancora supportate.
   return 'it';
 }
 
@@ -3918,6 +4385,12 @@ function t(key){
   return I18N[currentLanguage]?.[key] ??
          I18N.it[key] ??
          key;
+}
+
+function tf(key,vars={}){
+  return t(key).replace(/\{(\w+)\}/g,(_,name)=>
+    Object.prototype.hasOwnProperty.call(vars,name) ? vars[name] : `{${name}}`
+  );
 }
 
 function applyLanguage(){
@@ -3938,6 +4411,10 @@ function applyLanguage(){
     el.title=t(key);
   });
 
+  document.querySelectorAll('[data-i18n-alt]').forEach(el=>{
+    el.alt=t(el.dataset.i18nAlt);
+  });
+
   document.querySelectorAll('[data-i18n-aria-label]').forEach(el=>{
     const key=el.dataset.i18nAriaLabel;
     el.setAttribute('aria-label',t(key));
@@ -3953,12 +4430,17 @@ function setLanguage(language){
   currentLanguage=language;
   localStorage.setItem(LANGUAGE_STORAGE_KEY,language);
   applyLanguage();
+
+  // Rigenera i contenuti creati dinamicamente senza ricaricare i dati.
+  if(typeof S !== 'undefined' && S && S.counts){
+    render();
+  }
 }
 
 async function api(path,opts={}){
   const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
   const d=await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(d.error||'Errore');
+  if(!r.ok) throw new Error(d.error||t('error'));
   return d;
 }
 
@@ -4283,17 +4765,17 @@ function renderTypes(){
   const box=$('typeList');
   if(!box)return;
   const q=($('typeSearch')?.value||'').trim().toLowerCase();
-  const rows=S.types.filter(t=>!q || t.name.toLowerCase().includes(q));
-  box.innerHTML=rows.length ? rows.map(t=>{
-    const count=(t.fields||[]).filter(f=>f.active).length;
-    return `<div class="typecard" onclick="editType(${t.id})" title="Apri ${esc(t.name)}">
+  const rows=S.types.filter(typeDef=>!q || typeDef.name.toLowerCase().includes(q));
+  box.innerHTML=rows.length ? rows.map(typeDef=>{
+    const count=(typeDef.fields||[]).filter(f=>f.active).length;
+    return `<div class="typecard" onclick="editType(${typeDef.id})" title="${esc(tf('open_type',{name:typeDef.name}))}">
       <div class="typecard-main">
-        <span class="typeicon">${esc(t.icon)}</span>
-        <span class="typename">${esc(t.name)}</span>
+        <span class="typeicon">${esc(typeDef.icon)}</span>
+        <span class="typename">${esc(typeDef.name)}</span>
       </div>
-      <span class="typecount">${count} ${count===1?'campo':'campi'}</span>
+      <span class="typecount">${count} ${count===1?t('field_count_one'):t('field_count_many')}</span>
     </div>`;
-  }).join('') : '<div class="empty">Nessuna tipologia trovata.</div>';
+  }).join('') : `<div class="empty">${t('no_types_found')}</div>`;
 }
 
 function setTypePanelCollapsed(collapsed){
@@ -4302,7 +4784,7 @@ function setTypePanelCollapsed(collapsed){
   if(!p||!b)return;
   p.classList.toggle('collapsed',collapsed);
   b.textContent=collapsed?'▸':'▾';
-  b.title=collapsed?'Espandi tipologie':'Riduci tipologie';
+  b.title=collapsed?t('expand_types'):t('collapse_types');
   localStorage.setItem('inventario_type_panel_collapsed',collapsed?'1':'0');
 }
 function toggleTypePanel(){
@@ -4318,7 +4800,7 @@ function render(){
   if($('itemsGroupBy')) $('itemsGroupBy').value=grouping;
   const matched=Number(S.matched_count||0);
   if($('itemsListInfo')){
-    $('itemsListInfo').textContent=matched ? `${matched} ${matched===1?'elemento':'elementi'} totali` : '';
+    $('itemsListInfo').textContent=matched ? tf(matched===1?'items_total_one':'items_total_many',{count:matched}) : '';
   }
 
   const typeOpts=S.types.map(t=>`<option value="${t.id}">${esc(t.icon)} ${esc(t.name)}</option>`).join('');
@@ -4337,12 +4819,12 @@ function render(){
 
   renderInventory();
 
-  $('itemsTitle').textContent=$('search').value.trim()?'🔎 Risultati':'📦 Cosa possiedo';
+  $('itemsTitle').textContent=$('search').value.trim()?t('inventory_results'):t('inventory_owned');
 }
 
 
 function renderItemRow(i){
-  return `<button type="button" class="item item-row" onclick="showItemPreview(${i.id})" aria-label="Apri ${esc(i.name)}">
+  return `<button type="button" class="item item-row" onclick="showItemPreview(${i.id})" aria-label="${esc(tf('open_item',{name:i.name}))}">
     <span class="itemname">${esc(i.type_icon||'📦')} ${esc(i.name)}${i.quantity>1?' × '+i.quantity:''}</span>
     <span class="item-chevron">›</span>
   </button>`;
@@ -4360,15 +4842,15 @@ function renderLoadMore(key,loaded,total){
 
   return `<div class="inventory-pager">
     ${hasPrev ? `
-      <button type="button" class="secondary" onclick="loadFirstGroup('${esc(key)}',event)">⏮ Primi</button>
-      <button type="button" class="secondary" onclick="loadPreviousGroup('${esc(key)}',event)">‹ Precedenti</button>
+      <button type="button" class="secondary" onclick="loadFirstGroup('${esc(key)}',event)">⏮ ${t('first')}</button>
+      <button type="button" class="secondary" onclick="loadPreviousGroup('${esc(key)}',event)">‹ ${t('previous')}</button>
     ` : ''}
 
-    <span class="hint"><strong>${first}–${last}</strong> di ${total}</span>
+    <span class="hint"><strong>${tf('range_of_total',{first,last,total})}</strong></span>
 
     ${hasNext ? `
-      <button type="button" class="secondary" onclick="loadMoreGroup('${esc(key)}',event)">Successivi ›</button>
-      <button type="button" class="secondary" onclick="loadLastGroup('${esc(key)}',${total},event)">Ultimi ⏭</button>
+      <button type="button" class="secondary" onclick="loadMoreGroup('${esc(key)}',event)">${t('next')} ›</button>
+      <button type="button" class="secondary" onclick="loadLastGroup('${esc(key)}',${total},event)">${t('last')} ⏭</button>
     ` : ''}
   </div>`;
 }
@@ -4469,26 +4951,26 @@ function renderSubgroupLoadMore(typeKey,subKey,loaded,total){
 
   return `<div class="inventory-pager">
     ${hasPrev ? `
-      <button type="button" class="secondary" onclick="loadFirstSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">⏮ Primi</button>
-      <button type="button" class="secondary" onclick="loadPreviousSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">‹ Precedenti</button>
+      <button type="button" class="secondary" onclick="loadFirstSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">⏮ ${t('first')}</button>
+      <button type="button" class="secondary" onclick="loadPreviousSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">‹ ${t('previous')}</button>
     ` : ''}
 
-    <span class="hint"><strong>${first}–${last}</strong> di ${total}</span>
+    <span class="hint"><strong>${tf('range_of_total',{first,last,total})}</strong></span>
 
     ${hasNext ? `
-      <button type="button" class="secondary" onclick="loadMoreSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">Successivi ›</button>
-      <button type="button" class="secondary" onclick="loadLastSubgroup('${esc(typeKey)}','${esc(subKey)}',${total},event)">Ultimi ⏭</button>
+      <button type="button" class="secondary" onclick="loadMoreSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">${t('next')} ›</button>
+      <button type="button" class="secondary" onclick="loadLastSubgroup('${esc(typeKey)}','${esc(subKey)}',${total},event)">${t('last')} ⏭</button>
     ` : ''}
   </div>`;
 }
 
 function renderTypeSubgroups(typeKey){
   const subs=S.subgroups[typeKey];
-  if(subs===undefined){setTimeout(()=>loadSubgroups(typeKey),0);return '<div class="inventory-loader">Carico i sottogruppi…</div>';}
+  if(subs===undefined){setTimeout(()=>loadSubgroups(typeKey),0);return `<div class="inventory-loader">${t('loading_subgroups')}</div>`;}
   if(subs===null)return null;
-  if(!subs.length)return '<div class="empty">Nessun elemento trovato.</div>';
+  if(!subs.length)return `<div class="empty">${t('no_items')}</div>`;
   return subs.map(g=>{const sk=String(g.subgroup_key),ck=subgroupCacheKey(typeKey,sk),items=S.subgroupItems[ck]||[],total=Number(g.item_count||0),collapsed=isSubgroupCollapsed(typeKey,sk);
-    const body=items.length?items.map(renderItemRow).join('')+renderSubgroupLoadMore(typeKey,sk,items.length,total):'<div class="inventory-loader">Apri il sottogruppo per caricare gli elementi.</div>';
+    const body=items.length?items.map(renderItemRow).join('')+renderSubgroupLoadMore(typeKey,sk,items.length,total):`<div class="inventory-loader">${t('open_subgroup_load')}</div>`;
     if(!collapsed && !items.length)setTimeout(()=>loadSubgroupPage(typeKey,sk,true),0);
     return `<section class="item-subgroup${collapsed?' collapsed':''}" data-type-key="${esc(typeKey)}" data-subgroup-key="${esc(sk)}"><button type="button" class="item-subgroup-head" onclick="toggleSubgroup(this)"><span class="item-subgroup-title">↳ ${esc(g.label)}</span><span class="item-group-side"><span class="item-group-count">${total}</span><span class="item-subgroup-arrow">⌄</span></span></button><div class="item-subgroup-body">${body}</div></section>`;
   }).join('');
@@ -4501,7 +4983,7 @@ function renderInventory(){
   const groups=S.groups||[];
 
   if(!groups.length){
-    box.innerHTML='<div class="empty">Nessun elemento trovato.</div>';
+    box.innerHTML=`<div class="empty">${t('no_items')}</div>`;
     return;
   }
 
@@ -4511,7 +4993,7 @@ function renderInventory(){
     const items=S.groupItems[key]||[];
     box.innerHTML=`
       <div class="flat-items-body">
-        ${items.length?items.map(renderItemRow).join(''):'<div class="inventory-loader">Caricamento elementi…</div>'}
+        ${items.length?items.map(renderItemRow).join(''):`<div class="inventory-loader">${t('loading_items')}</div>`}
         ${renderLoadMore(key,items.length,Number(g.item_count||0))}
       </div>`;
     if(!items.length)loadGroupPage(key,true);
@@ -4527,14 +5009,14 @@ function renderInventory(){
     if(grouping==='type'){
       const subhtml=renderTypeSubgroups(key);
       if(subhtml!==null) body=subhtml;
-      else body=items.length ? `${items.map(renderItemRow).join('')}${renderLoadMore(key,items.length,total)}` : '<div class="inventory-loader">Apri il gruppo per caricare gli elementi.</div>';
+      else body=items.length ? `${items.map(renderItemRow).join('')}${renderLoadMore(key,items.length,total)}` : `<div class="inventory-loader">${t('open_group_load')}</div>`;
     }else{
-      body=items.length ? `${items.map(renderItemRow).join('')}${renderLoadMore(key,items.length,total)}` : '<div class="inventory-loader">Apri il gruppo per caricare gli elementi.</div>';
+      body=items.length ? `${items.map(renderItemRow).join('')}${renderLoadMore(key,items.length,total)}` : `<div class="inventory-loader">${t('open_group_load')}</div>`;
     }
     return `
       <section class="item-group${collapsed?' collapsed':''}" data-grouping="${grouping}" data-group-key="${esc(key)}">
         <button type="button" class="item-group-head" onclick="toggleItemGroup(this)">
-          <span class="item-group-title"><span>${esc(g.icon||'📦')}</span><span>${esc(g.label||'Gruppo')}</span></span>
+          <span class="item-group-title"><span>${esc(g.icon||'📦')}</span><span>${esc(g.label||t('group'))}</span></span>
           <span class="item-group-side">
             <span class="item-group-count">${total}</span>
             <span class="item-group-arrow">⌄</span>
@@ -4555,12 +5037,12 @@ function renderInventory(){
 
 function renderCustom(mode,values={}){
   const typeId=$(mode==='add'?'aType':'eType').value;
-  const t=typeById(typeId);
+  const typeDef=typeById(typeId);
   const box=$(mode==='add'?'customAdd':'customEdit');
-  if(!t){box.innerHTML='<div class="empty">Nessun campo.</div>';return;}
+  if(!typeDef){box.innerHTML=`<div class="empty">${window.t('no_fields')}</div>`;return;}
 
-  const fields=(t.fields||[]).filter(f=>f.active);
-  if(!fields.length){box.innerHTML='<div class="empty">Questa tipologia non ha campi personalizzati.</div>';return;}
+  const fields=(typeDef.fields||[]).filter(f=>f.active);
+  if(!fields.length){box.innerHTML=`<div class="empty">${window.t('no_custom_fields')}</div>`;return;}
 
   box.innerHTML=fields.map(f=>{
     const v=values[String(f.id)]??'';
@@ -4574,7 +5056,7 @@ function renderCustom(mode,values={}){
       const opts=(f.options||'').split(',').map(x=>x.trim()).filter(Boolean);
       control=`<select data-cfid="${f.id}"><option value=""></option>${opts.map(o=>`<option value="${esc(o)}"${String(v)===o?' selected':''}>${esc(o)}</option>`).join('')}</select>${ph?`<span class="hint">${ph}</span>`:''}`;
     }else if(f.field_type==='checkbox'){
-      control=`<select data-cfid="${f.id}"><option value=""></option><option value="1"${String(v)==='1'?' selected':''}>Sì</option><option value="0"${String(v)==='0'?' selected':''}>No</option></select>`;
+      control=`<select data-cfid="${f.id}"><option value=""></option><option value="1"${String(v)==='1'?' selected':''}>${window.t('yes')}</option><option value="0"${String(v)==='0'?' selected':''}>${window.t('no')}</option></select>`;
     }else{
       const typ=f.field_type==='number'?'number':f.field_type==='date'?'date':'text';
       control=`<input type="${typ}" data-cfid="${f.id}" value="${esc(v)}" placeholder="${ph}">`;
@@ -4585,8 +5067,8 @@ function renderCustom(mode,values={}){
     const isBookCode=normalizedLabel==='isbn' || normalizedLabel==='isbn / ean' || normalizedLabel==='isbn/ean';
     const lookup=isBookCode ? `
       <div class="book-lookup-row">
-        <button type="button" class="secondary small scan-code-btn" onclick="startBarcodeScan('${mode}',${f.id},this)">📷 Scansiona codice</button>
-        <button type="button" class="secondary small" onclick="lookupBookData('${mode}',${f.id},this)">🔎 Cerca dati</button>
+        <button type="button" class="secondary small scan-code-btn" onclick="startBarcodeScan('${mode}',${f.id},this)">${window.t('scan_code')}</button>
+        <button type="button" class="secondary small" onclick="lookupBookData('${mode}',${f.id},this)">${window.t('search_data')}</button>
         <span class="book-lookup-status"></span>
       </div>` : '';
     return `
@@ -4604,6 +5086,19 @@ function renderCustom(mode,values={}){
 
   enableVoiceInputs(box);
   updateCameraAvailability();
+}
+
+function updatePhotoFileName(input){
+  const label=$('photoFileName');
+  if(!label)return;
+
+  if(input?.files?.length){
+    label.removeAttribute('data-i18n');
+    label.textContent=input.files[0].name;
+  }else{
+    label.dataset.i18n='no_file_selected';
+    label.textContent=t('no_file_selected');
+  }
 }
 
 function toggleCustomField(btn){
@@ -4627,10 +5122,10 @@ function toggleCustomField(btn){
 
 function findCustomInputByLabel(mode,labelNames){
   const typeId=$(mode==='add'?'aType':'eType').value;
-  const t=typeById(typeId);
-  if(!t)return null;
+  const typeDef=typeById(typeId);
+  if(!typeDef)return null;
   const wanted=labelNames.map(x=>x.toLowerCase());
-  const f=(t.fields||[]).find(x=>wanted.includes(String(x.label||'').toLowerCase()));
+  const f=(typeDef.fields||[]).find(x=>wanted.includes(String(x.label||'').toLowerCase()));
   if(!f)return null;
   return document.querySelector(`#${mode==='add'?'customAdd':'customEdit'} [data-cfid="${f.id}"]`);
 }
@@ -4662,8 +5157,8 @@ function updateCameraAvailability(){
   document.querySelectorAll('.scan-code-btn').forEach(btn=>{
     btn.disabled=!available;
     btn.title=available
-      ? 'Scansiona codice con la fotocamera'
-      : 'Fotocamera non disponibile: è richiesta una connessione HTTPS';
+      ? t('scan_code_camera')
+      : t('camera_https_required');
   });
 }
 
@@ -4702,7 +5197,7 @@ function applyScannedBarcode(raw){
   input.dispatchEvent(new Event('input',{bubbles:true}));
   input.dispatchEvent(new Event('change',{bubbles:true}));
   const status=barcodeTarget.statusEl;
-  if(status)status.textContent='✓ Codice rilevato: '+code+' — ora puoi premere Cerca dati.';
+  if(status)status.textContent=tf('code_detected',{code});
   stopBarcodeScan(false);
   return true;
 }
@@ -4713,7 +5208,7 @@ async function decodeBarcodeOnServer(blob, filename='frame.jpg'){
   const resp=await fetch('api/decode-barcode',{method:'POST',body:fd});
   let data={};
   try{data=await resp.json();}catch(e){}
-  if(!resp.ok)throw new Error(data.error||'Errore durante la lettura del barcode.');
+  if(!resp.ok)throw new Error(data.error||t('barcode_read_error'));
   for(const b of (data.barcodes||[])){
     if(applyScannedBarcode(b.code||b.raw))return true;
   }
@@ -4729,7 +5224,7 @@ async function startBarcodeScan(mode,fieldId,btn){
   if(!canLiveCamera){
     const targetStatus=barcodeTarget.statusEl;
     if(targetStatus){
-      targetStatus.textContent='🔒 Fotocamera non disponibile: è richiesta una connessione HTTPS. Inserisci il codice manualmente.';
+      targetStatus.textContent=t('camera_https_manual');
     }
     barcodeTarget=null;
     return;
@@ -4737,7 +5232,7 @@ async function startBarcodeScan(mode,fieldId,btn){
 
   const dlg=$('barcodeDlg'), video=$('barcodeVideo'), status=$('barcodeStatus');
   dlg.classList.add('show');
-  status.textContent='Avvio fotocamera…';
+  status.textContent=t('camera_starting');
   try{
     barcodeDetector=await makeBarcodeDetector();
     barcodeFallbackMode=!barcodeDetector;
@@ -4747,13 +5242,13 @@ async function startBarcodeScan(mode,fieldId,btn){
     video.srcObject=barcodeStream;
     await video.play();
     status.textContent=barcodeFallbackMode
-      ? 'Inquadra il codice nel riquadro verde. Modalità compatibile attiva.'
-      : 'Inquadra il codice a barre dentro il riquadro verde.';
+      ? t('camera_frame_fallback')
+      : t('camera_frame');
     barcodeScanLoop();
   }catch(e){
     // Se il browser espone getUserMedia ma poi lo blocca (Ingress/WebView,
     // permessi o policy), manteniamo il fallback foto sempre disponibile.
-    status.textContent='La fotocamera live non è disponibile. Premi “📸 Scatta foto del codice” oppure inserisci il codice manualmente.';
+    status.textContent=t('camera_live_unavailable');
     const photoBtn=$('barcodePhotoBtn');
     if(photoBtn) photoBtn.focus();
   }
@@ -4809,7 +5304,7 @@ function chooseBarcodePhoto(){
   if(!cameraSecureContextAvailable()){
     const status=$('barcodeStatus');
     if(status){
-      status.textContent='🔒 Fotocamera non disponibile: è richiesta una connessione HTTPS.';
+      status.textContent=t('camera_https');
     }
     return;
   }
@@ -4824,11 +5319,11 @@ async function scanBarcodePhoto(input){
   const targetStatus=barcodeTarget?.statusEl;
   const file=input.files?.[0];
   if(!file){
-    if(targetStatus) targetStatus.textContent='Scansione annullata. Puoi inserire il codice manualmente.';
+    if(targetStatus) targetStatus.textContent=t('scan_cancelled');
     return;
   }
   if(!$('barcodeDlg').classList.contains('show')) $('barcodeDlg').classList.add('show');
-  status.textContent='Analizzo la foto del codice…';
+  status.textContent=t('analysing_code_photo');
   try{
     const detector=await makeBarcodeDetector();
     if(detector && 'createImageBitmap' in window){
@@ -4840,9 +5335,9 @@ async function scanBarcodePhoto(input){
       }catch(e){}
     }
     if(await decodeBarcodeOnServer(file,file.name||'barcode.jpg'))return;
-    status.textContent='Nessun ISBN/EAN rilevato nella foto. Riprova avvicinandoti al codice oppure inseriscilo manualmente.';
+    status.textContent=t('code_not_found_photo');
   }catch(e){
-    status.textContent=e.message||'Impossibile leggere il codice dalla foto.';
+    status.textContent=e.message||t('code_photo_error');
   }
 }
 
@@ -4851,11 +5346,11 @@ async function lookupBookData(mode,fieldId,btn){
   const codeEl=box.querySelector(`[data-cfid="${fieldId}"]`);
   const status=btn.parentElement.querySelector('.book-lookup-status');
   const code=(codeEl?.value||'').trim();
-  if(!code){alert('Inserisci prima il codice ISBN / EAN.');codeEl?.focus();return;}
+  if(!code){alert(t('enter_code_first'));codeEl?.focus();return;}
 
   const oldText=btn.textContent;
   btn.disabled=true;
-  btn.textContent='⏳ Ricerca...';
+  btn.textContent=t('searching');
   status.textContent='';
   try{
     const data=await api('api/lookup-book?code='+encodeURIComponent(code));
@@ -4867,8 +5362,8 @@ async function lookupBookData(mode,fieldId,btn){
     if(data.year)lines.push('Anno: '+data.year);
     lines.push('Codice: '+data.code);
 
-    const ok=confirm('Dati trovati su '+data.source+':\n\n'+lines.join('\n')+'\n\nCompilare i campi attualmente vuoti?\nI campi già compilati NON verranno sovrascritti.');
-    if(!ok){status.textContent='Dati trovati, non applicati.';return;}
+    const ok=confirm(tf('data_found_confirm',{source:data.source,lines:lines.join('\n')}));
+    if(!ok){status.textContent=t('data_not_applied');return;}
 
     let applied=0;
     const nameEl=$(mode==='add'?'aName':'eName');
@@ -4878,10 +5373,10 @@ async function lookupBookData(mode,fieldId,btn){
     if(setIfEmpty(findCustomInputByLabel(mode,['Anno']),data.year))applied++;
     if(setIfEmpty(codeEl,data.code))applied++;
 
-    status.textContent=applied ? `✓ Compilati ${applied} campi vuoti` : 'Nessun campo vuoto da compilare.';
+    status.textContent=applied ? tf('fields_filled',{count:applied}) : t('no_empty_fields');
   }catch(e){
     alert(e.message);
-    status.textContent='Ricerca non riuscita.';
+    status.textContent=t('search_failed');
   }finally{
     btn.disabled=false;
     btn.textContent=oldText;
@@ -4933,41 +5428,41 @@ async function showItemPreview(id){
     catch(e){alert(e.message);return;}
   }
   viewingItem=id;
-  const t=typeById(i.item_type_id);
+  const typeDef=typeById(i.item_type_id);
   const rows=[];
-  addPreviewRow(rows,'Tipologia',`${t?.icon||i.type_icon||'📦'} ${t?.name||''}`.trim());
-  if(Number(i.quantity||1)>1) addPreviewRow(rows,'Quantità',i.quantity);
+  addPreviewRow(rows,t('item_type'),`${typeDef?.icon||i.type_icon||'📦'} ${typeDef?.name||''}`.trim());
+  if(Number(i.quantity||1)>1) addPreviewRow(rows,t('quantity'),i.quantity);
   const values=i.custom_values||{};
-  for(const f of (t?.fields||[])){
+  for(const f of (typeDef?.fields||[])){
     if(!f.active) continue;
     const v=values[String(f.id)] ?? values[f.id];
     addPreviewRow(rows,f.label,v);
   }
-  addPreviewRow(rows,'Ambiente',i.environment);
-  addPreviewRow(rows,'Mobile / Scaffale',i.furniture);
-  addPreviewRow(rows,'Ripiano / Cassetto',i.shelf);
-  addPreviewRow(rows,'Contenitore',i.container_name);
-  addPreviewRow(rows,'Codice contenitore',i.container_code);
-  addPreviewRow(rows,'Descrizione',i.description);
-  addPreviewRow(rows,'Tag',i.tags);
-  addPreviewRow(rows,'Note',i.notes);
-  $('viewTitle').textContent=`${i.type_icon||t?.icon||'📦'} ${i.name||'Dettagli elemento'}`;
+  addPreviewRow(rows,t('environment'),i.environment);
+  addPreviewRow(rows,t('furniture'),i.furniture);
+  addPreviewRow(rows,t('shelf'),i.shelf);
+  addPreviewRow(rows,t('container'),i.container_name);
+  addPreviewRow(rows,t('container_code'),i.container_code);
+  addPreviewRow(rows,t('description'),i.description);
+  addPreviewRow(rows,t('tags'),i.tags);
+  addPreviewRow(rows,t('notes'),i.notes);
+  $('viewTitle').textContent=`${i.type_icon||typeDef?.icon||'📦'} ${i.name||t('item_details')}`;
   const photos=i.photos||[];
   if(photos.length){
     const visible=photos.slice(0,3);
-    $('viewPhotos').innerHTML=`<div class="item-preview-photo-title">📷 Foto</div>
+    $('viewPhotos').innerHTML=`<div class="item-preview-photo-title">📷 ${t('photos')}</div>
       <div class="item-preview-photo-grid">${visible.map(p=>`
         <div class="item-preview-photo">
-          <button type="button" onclick="openPhoto('${p.filename}')" aria-label="Apri foto">
-            <img src="files/${encodeURIComponent(p.thumb_filename)}" alt="${esc(p.label||i.name||'Foto elemento')}">
+          <button type="button" onclick="openPhoto('${p.filename}')" aria-label="${esc(t('open_photo'))}">
+            <img src="files/${encodeURIComponent(p.thumb_filename)}" alt="${esc(p.label||i.name||t('item_photo'))}">
           </button>
           ${p.label?`<div class="item-preview-photo-label">${esc(p.label)}</div>`:''}
         </div>`).join('')}</div>
-      ${photos.length>3?`<div class="item-preview-photo-more">+ altre ${photos.length-3} foto nella scheda Modifica</div>`:''}`;
+      ${photos.length>3?`<div class="item-preview-photo-more">${tf('more_photos',{count:photos.length-3})}</div>`:''}`;
   }else{
-    $('viewPhotos').innerHTML=`<button type="button" class="item-preview-no-photo" onclick="openPreviewPhotosEditor()">📷 Nessuna foto · Aggiungi</button>`;
+    $('viewPhotos').innerHTML=`<button type="button" class="item-preview-no-photo" onclick="openPreviewPhotosEditor()">${t('no_photo_add')}</button>`;
   }
-  $('viewDetails').innerHTML=rows.length?rows.join(''):'<div class="empty">Nessun dettaglio aggiuntivo.</div>';
+  $('viewDetails').innerHTML=rows.length?rows.join(''):`<div class="empty">${t('no_additional_details')}</div>`;
   $('viewDlg').classList.add('show');
 }
 function closeItemPreview(){$('viewDlg').classList.remove('show');viewingItem=null;}
@@ -5038,7 +5533,7 @@ async function saveItem(){
 }
 
 async function deleteItem(id){
-  if(!confirm('Eliminare questo elemento?'))return;
+  if(!confirm(t('delete_item_confirm')))return;
   try{await api('api/items/'+id,{method:'DELETE'});await load();}catch(e){alert(e.message);}
 }
 
@@ -5046,8 +5541,10 @@ async function deleteEditingItem(){
   if(!editingItem)return;
   const id=editingItem;
   const item=S.items.find(x=>x.id===id);
-  const label=item?.name ? ` “${item.name}”` : '';
-  if(!confirm('Eliminare definitivamente'+label+'?'))return;
+  const confirmMessage=item?.name
+    ? tf('delete_item_named_confirm',{name:item.name})
+    : t('delete_item_unnamed_confirm');
+  if(!confirm(confirmMessage))return;
   try{
     await api('api/items/'+id,{method:'DELETE'});
     closeEdit();
@@ -5061,8 +5558,8 @@ function renderPhotos(i){
     <div class="photo">
       <img src="files/${encodeURIComponent(p.thumb_filename)}" onclick="openPhoto('${p.filename}')">
       <div class="meta">${esc(p.label||'')}</div>
-      <button class="danger small" onclick="deletePhoto(${p.id})">Elimina</button>
-    </div>`).join(''):'<div class="empty">Nessuna foto.</div>';
+      <button class="danger small" onclick="deletePhoto(${p.id})">${t('delete')}</button>
+    </div>`).join(''):`<div class="empty">${t('no_photos')}</div>`;
 }
 
 function openPhoto(filename){
@@ -5086,41 +5583,49 @@ document.addEventListener('keydown',e=>{
 async function uploadPhoto(){
   if(!editingItem)return;
   const file=$('photoFile').files[0];
-  if(!file){alert('Scegli una foto');return;}
+  if(!file){alert(t('choose_photo'));return;}
   const fd=new FormData();
   fd.append('file',file);
   fd.append('profile',$('photoProfile').value);
   fd.append('label',$('photoLabel').value);
   const r=await fetch('api/items/'+editingItem+'/photos',{method:'POST',body:fd});
   const d=await r.json().catch(()=>({}));
-  if(!r.ok){alert(d.error||'Errore caricamento foto');return;}
-  await load();
-  const item=S.items.find(x=>x.id===editingItem);
-  if(item)renderPhotos(item);
-  $('photoFile').value='';$('photoLabel').value='';
+  if(!r.ok){alert(d.error||t('photo_upload_error'));return;}
+  // Ricarica subito l'elemento dal server per mostrare
+  // anche la thumbnail della foto appena caricata.
+  const item=await api('api/items/'+editingItem);
+  mergeLoadedItems([item]);
+  renderPhotos(item);
+
+  $('photoFile').value='';
+  $('photoLabel').value='';
+  updatePhotoFileName($('photoFile'));
 }
 
 async function deletePhoto(id){
-  if(!confirm('Eliminare questa foto?'))return;
+  if(!confirm(t('delete_photo_confirm')))return;
   try{
     await api('api/photos/'+id,{method:'DELETE'});
-    await load();
-    const item=S.items.find(x=>x.id===editingItem);
-    if(item)renderPhotos(item);
+
+    // Ricarica solo l'elemento modificato e aggiorna subito
+    // la galleria dopo l'eliminazione della foto.
+    const item=await api('api/items/'+editingItem);
+    mergeLoadedItems([item]);
+    renderPhotos(item);
   }catch(e){alert(e.message);}
 }
 
 function refreshSubgroupFieldOptions(selected=''){
   const sel=$('tSubgroupField'); if(!sel)return;
   const rows=[...document.querySelectorAll('#typeFields .fieldrow')].filter(r=>r.dataset.active!=='0' && r.dataset.id);
-  sel.innerHTML='<option value="">Nessuno</option>'+rows.map(r=>`<option value="${esc(r.dataset.id)}">${esc(r.querySelector('.flabel').value||'Campo')}</option>`).join('');
+  sel.innerHTML=`<option value="">${t('none')}</option>`+rows.map(r=>`<option value="${esc(r.dataset.id)}">${esc(r.querySelector('.flabel').value||t('field'))}</option>`).join('');
   sel.value=String(selected||'');
 }
 
 function openTypeDialog(){
   editingType=null;
   $('deleteTypeBtn').style.display='none';
-  $('typeDlgTitle').textContent='🏷️ Nuova tipologia';
+  $('typeDlgTitle').textContent=t('new_type');
   $('tName').value='';
   $('tIconCustom').value='';
   $('tIcon').value='📦';
@@ -5140,21 +5645,21 @@ function addFieldRow(field={}){
   row.dataset.id=field.id||'';
   row.dataset.active=field.active===0?'0':'1';
   row.innerHTML=`
-    <input class="flabel" placeholder="Nome campo" value="${esc(field.label||'')}">
+    <input class="flabel" placeholder="${esc(t('field_name'))}" value="${esc(field.label||'')}">
     <select class="ftype">
-      <option value="text">Testo</option>
-      <option value="number">Numero</option>
-      <option value="date">Data</option>
-      <option value="textarea">Testo lungo</option>
-      <option value="select">Elenco</option>
-      <option value="checkbox">Sì/No</option>
+      <option value="text">${t('field_text')}</option>
+      <option value="number">${t('field_number')}</option>
+      <option value="date">${t('field_date')}</option>
+      <option value="textarea">${t('field_long_text')}</option>
+      <option value="select">${t('field_list')}</option>
+      <option value="checkbox">${t('field_yes_no')}</option>
     </select>
-    <label class="check"><input class="freq" type="checkbox"${field.required?' checked':''}> obbl.</label>
+    <label class="check"><input class="freq" type="checkbox"${field.required?' checked':''}> ${t('required_short')}</label>
     <button class="secondary small" onclick="moveField(this,-1)">↑</button>
     <button class="secondary small" onclick="moveField(this,1)">↓</button>
-    <button class="secondary small" onclick="toggleField(this)">${field.active===0?'Riattiva':'Nascondi'}</button>
-    <input class="fopts options" placeholder="Opzioni separate da virgola (solo per Elenco)" value="${esc(field.options||'')}">
-    <input class="fplaceholder options" placeholder="Testo di esempio, es. HDMI, USB, Ethernet..." value="${esc(field.placeholder||'')}">
+    <button class="secondary small" onclick="toggleField(this)">${field.active===0?t('reactivate'):t('hide')}</button>
+    <input class="fopts options" placeholder="${esc(t('list_options_placeholder'))}" value="${esc(field.options||'')}">
+    <input class="fplaceholder options" placeholder="${esc(t('field_example_placeholder'))}" value="${esc(field.placeholder||'')}">
   `;
   row.querySelector('.ftype').value=field.field_type||'text';
   $('typeFields').appendChild(row);
@@ -5174,29 +5679,29 @@ function toggleField(btn){
   const active=row.dataset.active!=='0';
   row.dataset.active=active?'0':'1';
   row.classList.toggle('inactive',active);
-  btn.textContent=active?'Riattiva':'Nascondi';
+  btn.textContent=active?t('reactivate'):t('hide');
   refreshSubgroupFieldOptions($('tSubgroupField')?.value||'');
 }
 
 function editType(id){
-  const t=typeById(id);
-  if(!t)return;
+  const typeDef=typeById(id);
+  if(!typeDef)return;
   editingType=id;
-  $('typeDlgTitle').textContent='✏️ Modifica tipologia';
+  $('typeDlgTitle').textContent=t('edit_type');
   $('deleteTypeBtn').style.display='inline-block';
-  $('tName').value=t.name;
-  $('tIconCustom').value=t.icon;
+  $('tName').value=typeDef.name;
+  $('tIconCustom').value=typeDef.icon;
   $('typeFields').innerHTML='';
-  (t.fields||[]).forEach(addFieldRow);
-  refreshSubgroupFieldOptions(t.subgroup_field_id||'');
+  (typeDef.fields||[]).forEach(addFieldRow);
+  refreshSubgroupFieldOptions(typeDef.subgroup_field_id||'');
   $('typeDlg').classList.add('show');
 }
 
 async function deleteType(){
   if(!editingType)return;
-  const t=typeById(editingType);
-  const name=t?t.name:'questa tipologia';
-  if(!confirm(`Eliminare definitivamente la tipologia "${name}"?\n\nL'operazione è consentita solo se nessun elemento la sta usando.`))return;
+  const typeDef=typeById(editingType);
+  const name=typeDef?typeDef.name:t('this_type');
+  if(!confirm(tf('delete_type_confirm',{name})))return;
   try{
     await api('api/types/'+editingType,{method:'DELETE'});
     closeTypeDialog();
@@ -5259,7 +5764,7 @@ function backupDate(value){
 
 async function loadBackupList(){
   const box=$('backupList');
-  box.innerHTML='<div class="hint">Caricamento backup…</div>';
+  box.innerHTML=`<div class="hint">${t('loading_backups')}</div>`;
 
   try{
     const data=await api('api/backups');
@@ -5277,44 +5782,42 @@ async function loadBackupList(){
             <span>🕒 ${esc(backupDate(b.modified))}</span>
             <span>💾 ${backupBytes(b.size)}</span>
             ${b.schema_version!==null && b.schema_version!==undefined
-              ? `<span>Schema ${esc(b.schema_version)}</span>`
+              ? `<span>${t('schema')} ${esc(b.schema_version)}</span>`
               : ''}
           </div>
 
           <div class="backup-row-status ${b.valid?'ok':'bad'}">
             ${b.valid
-              ? `✓ Integro${b.items!==null?` · ${b.items} elementi`:''}`
-              : `⚠ ${esc(b.integrity||'Backup non valido')}`}
+              ? `✓ ${t('backup_valid')}${b.items!==null?` · ${b.items} ${t('backup_items')}`:''}`
+              : `⚠ ${esc(b.integrity||t('backup_invalid'))}`}
           </div>
 
           <div class="backup-row-actions">
             <a class="secondary backup-download"
                style="display:flex;align-items:center;justify-content:center;text-decoration:none;border-radius:10px;padding:8px"
                href="api/backups/download/${encodeURIComponent(b.filename)}">
-              ⬇ Scarica
+              ${t('download')}
             </a>
 
             ${b.valid?`
               <button type="button"
                       class="backup-restore"
                       onclick="restoreBackupFromUi('${esc(b.filename)}')">
-                ↩ Ripristina
+                ${t('restore')}
               </button>
             `:''}
           </div>
         </div>
       `).join('')
-      : '<div class="empty">Nessun backup disponibile.</div>';
+      : `<div class="empty">${t('no_backups')}</div>`;
 
   }catch(e){
-    box.innerHTML=`<div class="notice">Errore: ${esc(e.message)}</div>`;
+    box.innerHTML=`<div class="notice">${t('error')}: ${esc(e.message)}</div>`;
   }
 }
 
 async function createManualBackup(){
-  if(!confirm(
-    'Creare adesso una copia di sicurezza del database?'
-  ))return;
+  if(!confirm(t('create_backup_confirm')))return;
 
   try{
     const data=await api('api/backups/create',{
@@ -5322,9 +5825,7 @@ async function createManualBackup(){
       body:JSON.stringify({})
     });
 
-    alert(
-      'Backup creato correttamente:\\n\\n'+data.filename
-    );
+    alert(tf('backup_created',{filename:data.filename}));
 
     await loadBackupList();
 
@@ -5334,19 +5835,12 @@ async function createManualBackup(){
 }
 
 async function restoreBackupFromUi(filename){
-  if(!confirm(
-    'Ripristinare questo backup?\\n\\n'+filename+
-    '\\n\\nIl database attuale verrà sostituito. '+
-    'Prima del ripristino Inventario Casa proverà a crearne '+
-    'un ulteriore backup di sicurezza.'
-  ))return;
+  if(!confirm(tf('restore_backup_confirm',{filename})))return;
 
-  const confirmation=prompt(
-    'Per confermare scrivi esattamente:\\n\\nRIPRISTINA'
-  );
+  const confirmation=prompt(t('restore_type_word'));
 
   if(confirmation!=='RIPRISTINA'){
-    alert('Ripristino annullato.');
+    alert(t('restore_cancelled'));
     return;
   }
 
@@ -5357,20 +5851,20 @@ async function restoreBackupFromUi(filename){
     });
 
     let message=
-      'Database ripristinato correttamente.\\n\\n'+
-      'Elementi: '+(data.database?.items??'?')+'\\n'+
-      'Tipologie: '+(data.database?.types??'?')+'\\n'+
-      'Foto: '+(data.database?.photos??'?')+'\\n'+
-      'Integrity check: '+(data.database?.integrity??'?');
+      t('database_restored')+'\\n\\n'+
+      t('items')+': '+(data.database?.items??'?')+'\\n'+
+      t('types')+': '+(data.database?.types??'?')+'\\n'+
+      t('photos')+': '+(data.database?.photos??'?')+'\\n'+
+      t('integrity_check')+': '+(data.database?.integrity??'?');
 
     if(data.safety_backup){
-      message+='\\n\\nBackup del DB precedente:\\n'+
+      message+='\\n\\n'+t('previous_db_backup')+'\\n'+
         data.safety_backup;
     }
 
     if(data.safety_warning){
-      message+='\\n\\nNota: non è stato possibile verificare '+
-        'il DB precedente:\\n'+data.safety_warning;
+      message+='\\n\\n'+t('previous_db_warning')+'\\n'+
+        data.safety_warning;
     }
 
     alert(message);
@@ -5380,8 +5874,8 @@ async function restoreBackupFromUi(filename){
 
   }catch(e){
     alert(
-      'Ripristino non riuscito:\\n\\n'+e.message+
-      '\\n\\nIl backup selezionato non viene eliminato.'
+      t('restore_failed')+'\\n\\n'+e.message+
+      '\\n\\n'+t('selected_backup_kept')
     );
     await loadBackupList();
   }
