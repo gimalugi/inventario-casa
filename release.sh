@@ -59,8 +59,17 @@ REMOTE_SHA="$(git rev-parse origin/main)"
 [ "$LOCAL_SHA" = "$REMOTE_SHA" ] || \
   die "main locale non coincide con origin/main. Esegui: git pull --ff-only origin main"
 
+TAG_EXISTS=0
+
 if git rev-parse "$TAG" >/dev/null 2>&1; then
-  die "Il tag $TAG esiste già."
+  TAG_EXISTS=1
+
+  TAG_SHA="$(git rev-list -n 1 "$TAG")"
+
+  [ "$TAG_SHA" = "$LOCAL_SHA" ] || \
+    die "Il tag $TAG esiste ma punta a un commit diverso da main."
+
+  echo "Il tag $TAG esiste già e punta al commit corretto."
 fi
 
 HTTP_CODE="$(curl -sS \
@@ -72,7 +81,10 @@ HTTP_CODE="$(curl -sS \
   "$API/repos/$REPO/releases/tags/$TAG")"
 
 if [ "$HTTP_CODE" = "200" ]; then
-  die "La GitHub Release $TAG esiste già."
+  echo
+  echo "La GitHub Release $TAG esiste già."
+  echo "Nessuna operazione necessaria."
+  exit 0
 elif [ "$HTTP_CODE" != "404" ]; then
   cat /tmp/inventario-release-check.json
   die "Errore durante la verifica della release. HTTP $HTTP_CODE"
@@ -98,6 +110,13 @@ echo "Branch     : $BRANCH"
 echo "Versione   : $VERSION"
 echo "Tag        : $TAG"
 echo "Commit     : $(git rev-parse --short HEAD)"
+
+if [ "$TAG_EXISTS" -eq 1 ]; then
+  echo "Azione     : crea solo la GitHub Release"
+else
+  echo "Azione     : crea tag e GitHub Release"
+fi
+
 echo
 echo "Note release:"
 echo "----------------------------------------"
@@ -105,7 +124,13 @@ echo "$NOTES"
 echo "----------------------------------------"
 echo
 
-read -r -p "Creare tag e GitHub Release $TAG? [y/N] " ANSWER
+if [ "$TAG_EXISTS" -eq 1 ]; then
+  PROMPT="Creare la GitHub Release $TAG usando il tag esistente? [y/N] "
+else
+  PROMPT="Creare tag e GitHub Release $TAG? [y/N] "
+fi
+
+read -r -p "$PROMPT" ANSWER
 
 case "$ANSWER" in
   y|Y|yes|YES) ;;
@@ -115,12 +140,17 @@ case "$ANSWER" in
     ;;
 esac
 
-echo
-echo "Creo tag $TAG..."
-git tag -a "$TAG" -m "Inventario Casa $TAG"
+if [ "$TAG_EXISTS" -eq 0 ]; then
+  echo
+  echo "Creo tag $TAG..."
+  git tag -a "$TAG" -m "Inventario Casa $TAG"
 
-echo "Pubblico tag..."
-git push origin "$TAG"
+  echo "Pubblico tag..."
+  git push origin "$TAG"
+else
+  echo
+  echo "Uso il tag $TAG già esistente."
+fi
 
 python3 - "$TAG" "$NOTES" > /tmp/inventario-release.json <<'PY'
 import json
