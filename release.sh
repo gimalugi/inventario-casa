@@ -53,7 +53,7 @@ done
 CHANGELOG="inventario_casa/CHANGELOG.md"
 [ -f "$CHANGELOG" ] || die "$CHANGELOG non trovato."
 
-CHANGELOG_VERSION="$(sed -n 's/^##[[:space:]]\+\([0-9][0-9.]*\)[[:space:]]*$/\1/p' "$CHANGELOG" | head -1)"
+CHANGELOG_VERSION="$(sed -n 's/^##[[:space:]]\+\([0-9][0-9.]*\)[[:space:]]*$/\1/{p;q;}' "$CHANGELOG")"
 
 [ -n "$CHANGELOG_VERSION" ] || \
   die "Impossibile rilevare la versione nel CHANGELOG."
