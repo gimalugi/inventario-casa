@@ -13,6 +13,7 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /app/requirements.txt
 
 COPY app.py /app/app.py
 COPY templates /app/templates
+COPY static /app/static
 COPY wsgi.py /app/wsgi.py
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
