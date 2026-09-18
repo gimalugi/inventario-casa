@@ -1,3 +1,4 @@
+import hashlib
 from flask import Flask, request, jsonify, render_template, render_template_string, send_from_directory
 import sqlite3
 from pathlib import Path
@@ -1883,6 +1884,35 @@ loadBackups();
 
 
 
+FRONTEND_ASSETS = (
+    "css/app.css",
+    "js/translations.js",
+    "js/app.js",
+)
+
+def frontend_asset_version():
+    digest = hashlib.sha256()
+    static_dir = Path(app.static_folder)
+
+    for filename in FRONTEND_ASSETS:
+        digest.update((static_dir / filename).read_bytes())
+
+    return digest.hexdigest()[:12]
+
+FRONTEND_ASSET_VERSION = frontend_asset_version()
+
+
+@app.get("/assets/<version>/<path:filename>")
+def frontend_asset(version, filename):
+    if version != FRONTEND_ASSET_VERSION:
+        return "", 404
+
+    if filename not in FRONTEND_ASSETS:
+        return "", 404
+
+    return send_from_directory(app.static_folder, filename)
+
+
 @app.get("/")
 def index():
     if STARTUP_DB_ERROR:
@@ -1890,5 +1920,5 @@ def index():
             RECOVERY_PAGE,
             startup_error=STARTUP_DB_ERROR,
         )
-    return render_template("index.html")
+    return render_template("index.html", asset_version=FRONTEND_ASSET_VERSION)
 
