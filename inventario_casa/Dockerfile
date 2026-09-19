@@ -20,6 +20,7 @@ COPY backup_restore.py /app/backup_restore.py
 COPY media_routes.py /app/media_routes.py
 COPY type_routes.py /app/type_routes.py
 COPY item_routes.py /app/item_routes.py
+COPY lookup_routes.py /app/lookup_routes.py
 COPY templates /app/templates
 COPY static /app/static
 COPY wsgi.py /app/wsgi.py
