@@ -17,6 +17,7 @@ COPY database.py /app/database.py
 COPY backup.py /app/backup.py
 COPY backup_routes.py /app/backup_routes.py
 COPY backup_restore.py /app/backup_restore.py
+COPY media_routes.py /app/media_routes.py
 COPY templates /app/templates
 COPY static /app/static
 COPY wsgi.py /app/wsgi.py

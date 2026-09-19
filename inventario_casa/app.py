@@ -5,7 +5,6 @@ from pathlib import Path
 from datetime import datetime
 from PIL import Image, ImageOps
 from pyzbar.pyzbar import decode as zbar_decode
-import uuid
 import json
 import re
 import threading
@@ -13,6 +12,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from frontend import FRONTEND_ASSETS, asset_version, load_translations
 from backup_routes import create_backup_blueprint
+from media_routes import create_media_blueprint
 from backup_restore import restore_database_backup as backup_restore_database
 from database import (
     db as database_connect,
@@ -930,85 +930,6 @@ def api_delete_item(item_id):
     return jsonify(ok=True)
 
 
-@app.post("/api/items/<int:item_id>/photos")
-def api_upload_photo(item_id):
-    if "file" not in request.files:
-        return jsonify(error="Nessun file selezionato"), 400
-
-    with db() as conn:
-        item = conn.execute(
-            """SELECT i.id,t.name AS type_name
-               FROM items i LEFT JOIN item_types t ON t.id=i.item_type_id
-               WHERE i.id=?""",
-            (item_id,),
-        ).fetchone()
-        if not item:
-            return jsonify(error="Elemento non trovato"), 404
-
-    profile = request.form.get("profile", "auto")
-    if profile == "auto":
-        profile = "collectible" if (item["type_name"] or "").lower() == "fumetto" else "standard"
-
-    max_px, quality = (2400, 90) if profile == "collectible" else (1600, 84)
-
-    upload = request.files["file"]
-    uid = uuid.uuid4().hex
-    full_name = f"{item_id}_{uid}.webp"
-    thumb_name = f"{item_id}_{uid}_thumb.webp"
-
-    try:
-        image = Image.open(upload.stream)
-        image = ImageOps.exif_transpose(image).convert("RGB")
-        image.thumbnail((max_px, max_px))
-        image.save(MEDIA_DIR / full_name, "WEBP", quality=quality, method=6)
-
-        thumb = image.copy()
-        thumb.thumbnail((360, 360))
-        thumb.save(MEDIA_DIR / thumb_name, "WEBP", quality=80, method=6)
-
-        with db() as conn:
-            cur = conn.execute(
-                """INSERT INTO item_photos(item_id,filename,thumb_filename,label,created_at)
-                   VALUES(?,?,?,?,?)""",
-                (
-                    item_id,
-                    full_name,
-                    thumb_name,
-                    (request.form.get("label") or "").strip(),
-                    datetime.now().isoformat(timespec="seconds"),
-                ),
-            )
-            return jsonify(id=cur.lastrowid), 201
-    except Exception as exc:
-        for filename in (full_name, thumb_name):
-            try:
-                (MEDIA_DIR / filename).unlink(missing_ok=True)
-            except Exception:
-                pass
-        return jsonify(error=f"Immagine non valida: {exc}"), 400
-
-
-@app.delete("/api/photos/<int:photo_id>")
-def api_delete_photo(photo_id):
-    with db() as conn:
-        photo = conn.execute(
-            "SELECT filename,thumb_filename FROM item_photos WHERE id=?",
-            (photo_id,),
-        ).fetchone()
-        if not photo:
-            return jsonify(error="Foto non trovata"), 404
-
-        for filename in (photo["filename"], photo["thumb_filename"]):
-            try:
-                (MEDIA_DIR / filename).unlink(missing_ok=True)
-            except Exception:
-                pass
-
-        conn.execute("DELETE FROM item_photos WHERE id=?", (photo_id,))
-    return jsonify(ok=True)
-
-
-
 app.register_blueprint(
     create_backup_blueprint(
         db_path=DB_PATH,
@@ -1021,10 +942,12 @@ app.register_blueprint(
 )
 
 
-@app.get("/files/<path:filename>")
-def media_file(filename):
-    return send_from_directory(MEDIA_DIR, filename)
-
+app.register_blueprint(
+    create_media_blueprint(
+        db=db,
+        media_dir=MEDIA_DIR,
+    )
+)
 
 RECOVERY_PAGE = r"""
 <!doctype html>
