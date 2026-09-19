@@ -11,6 +11,14 @@ import threading
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from frontend import FRONTEND_ASSETS, asset_version, load_translations
+from database import (
+    db as database_connect,
+    table_columns,
+    read_schema_version as database_read_schema_version,
+    write_schema_version,
+    ensure_column,
+    ensure_type_field,
+)
 
 APP_NAME = "Inventario Casa"
 DATA_DIR = Path("/data/inventario_casa")
@@ -27,46 +35,13 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 
 
+
 def db():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
-
-
-def table_columns(conn, table):
-    return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+    return database_connect(DB_PATH, DATA_DIR, MEDIA_DIR)
 
 
 def read_schema_version():
-    if not DB_PATH.exists():
-        return 0
-
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        exists = conn.execute(
-            "SELECT 1 FROM sqlite_master "
-            "WHERE type='table' AND name='app_meta'"
-        ).fetchone()
-
-        if not exists:
-            return 0
-
-        row = conn.execute(
-            "SELECT value FROM app_meta WHERE key='schema_version'"
-        ).fetchone()
-
-        if not row:
-            return 0
-
-        try:
-            return int(row[0])
-        except (TypeError, ValueError):
-            return 0
-    finally:
-        conn.close()
+    return database_read_schema_version(DB_PATH)
 
 
 def create_pre_migration_backup(from_version, to_version):
@@ -408,44 +383,6 @@ def restore_database_backup(filename):
                     pass
 
 
-def write_schema_version(conn, version):
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS app_meta (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )
-        """
-    )
-
-    conn.execute(
-        """
-        INSERT OR REPLACE INTO app_meta(key,value)
-        VALUES('schema_version', ?)
-        """,
-        (str(version),),
-    )
-
-
-def ensure_column(conn, table, col, declaration):
-    if col not in table_columns(conn, table):
-        conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {declaration}")
-
-
-def ensure_type_field(conn, type_name, label, field_type="text", required=0, options="", sort_order=0):
-    t = conn.execute("SELECT id FROM item_types WHERE name=?", (type_name,)).fetchone()
-    if not t:
-        return
-    exists = conn.execute(
-        "SELECT id FROM type_fields WHERE type_id=? AND lower(label)=lower(?)",
-        (t["id"], label),
-    ).fetchone()
-    if not exists:
-        conn.execute(
-            """INSERT INTO type_fields(type_id,label,field_type,required,options,sort_order,active)
-               VALUES(?,?,?,?,?,?,1)""",
-            (t["id"], label, field_type, required, options, sort_order),
-        )
 
 
 def init_db():
