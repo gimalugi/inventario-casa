@@ -1182,10 +1182,9 @@ def api_restore_backup():
     filename = data.get("filename")
 
     try:
-        with DB_MAINTENANCE_LOCK:
-            result = restore_database_backup(filename)
+        result = restore_database_backup(filename)
 
-        return jsonify(ok=True, **result)
+        return jsonify(**result)
 
     except FileNotFoundError as exc:
         return jsonify(error=str(exc)), 404
