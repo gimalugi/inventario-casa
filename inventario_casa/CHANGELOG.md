@@ -1,3 +1,16 @@
+## 2.5.0
+
+- Riorganizzata l'architettura interna dell'applicazione per semplificare manutenzione e sviluppo di nuove funzionalità.
+- Separati frontend, stili CSS e logica JavaScript dal backend principale.
+- Suddivise le API in moduli dedicati per inventario, elementi, tipologie, foto/media, backup e ricerca libri/barcode.
+- Separata la gestione del database, delle migrazioni e delle procedure di Backup & Restore.
+- Aggiunta la configurazione della retention dei backup manuali, pre-ripristino e pre-migrazione.
+- Consolidata la gestione multilingua Italiano/Inglese utilizzando file di traduzione dedicati.
+- Migliorata la gestione della cache degli asset frontend tramite versionamento automatico.
+- Separata la pagina Recovery dal backend principale.
+- Corretti problemi nella procedura di ripristino dei backup.
+- Mantenuta la compatibilità con il database, lo schema e i dati esistenti.
+
 ## 2.4.1
 
 - Corretto il ripristino delle tipologie lasciate aperte nella sezione "Cosa possiedo".
