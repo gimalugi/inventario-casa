@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, render_template, render_template_string, send_from_directory
-import sqlite3
 import os
 from pathlib import Path
 from datetime import datetime
@@ -13,6 +12,7 @@ from urllib.error import HTTPError, URLError
 from frontend import FRONTEND_ASSETS, asset_version, load_translations
 from backup_routes import create_backup_blueprint
 from media_routes import create_media_blueprint
+from type_routes import create_type_blueprint
 from backup_restore import restore_database_backup as backup_restore_database
 from database import (
     db as database_connect,
@@ -663,131 +663,6 @@ def api_decode_barcode():
         app.logger.warning("Errore decodifica barcode: %s", exc)
         return jsonify(error="Non sono riuscito a leggere il codice da questa immagine."), 422
 
-def normalize_field_type(value):
-    allowed = {"text", "number", "date", "textarea", "select", "checkbox"}
-    return value if value in allowed else "text"
-
-
-@app.post("/api/types")
-def api_create_type():
-    data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
-    icon = (data.get("icon") or "📦").strip() or "📦"
-    if not name:
-        return jsonify(error="Il nome della tipologia è obbligatorio"), 400
-    try:
-        with db() as conn:
-            cur = conn.execute(
-                "INSERT INTO item_types(name,icon,created_at) VALUES(?,?,?)",
-                (name, icon, datetime.now().isoformat(timespec="seconds")),
-            )
-            type_id = cur.lastrowid
-            for order, field in enumerate(data.get("fields") or []):
-                label = (field.get("label") or "").strip()
-                if not label:
-                    continue
-                conn.execute(
-                    """INSERT INTO type_fields(type_id,label,field_type,required,options,sort_order,active,placeholder)
-                       VALUES(?,?,?,?,?,?,?,?)""",
-                    (
-                        type_id,
-                        label,
-                        normalize_field_type(field.get("field_type")),
-                        1 if field.get("required") else 0,
-                        (field.get("options") or "").strip(),
-                        order,
-                        1 if field.get("active", True) else 0,
-                        (field.get("placeholder") or "").strip(),
-                    ),
-                )
-            return jsonify(id=type_id), 201
-    except sqlite3.IntegrityError:
-        return jsonify(error="Esiste già una tipologia con questo nome"), 409
-
-
-@app.put("/api/types/<int:type_id>")
-def api_update_type(type_id):
-    data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
-    icon = (data.get("icon") or "📦").strip() or "📦"
-    if not name:
-        return jsonify(error="Il nome della tipologia è obbligatorio"), 400
-
-    try:
-        with db() as conn:
-            if not conn.execute("SELECT id FROM item_types WHERE id=?", (type_id,)).fetchone():
-                return jsonify(error="Tipologia non trovata"), 404
-
-            conn.execute(
-                "UPDATE item_types SET name=?,icon=? WHERE id=?",
-                (name, icon, type_id),
-            )
-
-            existing = {
-                r["id"] for r in conn.execute(
-                    "SELECT id FROM type_fields WHERE type_id=?", (type_id,)
-                )
-            }
-            incoming = set()
-
-            for order, field in enumerate(data.get("fields") or []):
-                label = (field.get("label") or "").strip()
-                if not label:
-                    continue
-                fid = field.get("id")
-                values = (
-                    label,
-                    normalize_field_type(field.get("field_type")),
-                    1 if field.get("required") else 0,
-                    (field.get("options") or "").strip(),
-                    order,
-                    1 if field.get("active", True) else 0,
-                    (field.get("placeholder") or "").strip(),
-                )
-                if fid:
-                    fid = int(fid)
-                    incoming.add(fid)
-                    conn.execute(
-                        """UPDATE type_fields
-                           SET label=?,field_type=?,required=?,options=?,sort_order=?,active=?,placeholder=?
-                           WHERE id=? AND type_id=?""",
-                        values + (fid, type_id),
-                    )
-                else:
-                    cur = conn.execute(
-                        """INSERT INTO type_fields(type_id,label,field_type,required,options,sort_order,active,placeholder)
-                           VALUES(?,?,?,?,?,?,?,?)""",
-                        (type_id,) + values,
-                    )
-                    incoming.add(cur.lastrowid)
-
-            # Mai cancellare un campo automaticamente: se sparisce dal form lo disattiviamo.
-            for fid in existing - incoming:
-                conn.execute(
-                    "UPDATE type_fields SET active=0 WHERE id=? AND type_id=?",
-                    (fid, type_id),
-                )
-
-            subgroup_field_id = data.get("subgroup_field_id")
-            if subgroup_field_id in (None, "", 0, "0"):
-                subgroup_field_id = None
-            else:
-                try:
-                    subgroup_field_id = int(subgroup_field_id)
-                except (TypeError, ValueError):
-                    subgroup_field_id = None
-                if subgroup_field_id and not conn.execute(
-                    "SELECT 1 FROM type_fields WHERE id=? AND type_id=? AND active=1",
-                    (subgroup_field_id, type_id),
-                ).fetchone():
-                    subgroup_field_id = None
-            conn.execute("UPDATE item_types SET subgroup_field_id=? WHERE id=?", (subgroup_field_id, type_id))
-
-            return jsonify(ok=True)
-    except sqlite3.IntegrityError:
-        return jsonify(error="Esiste già una tipologia con questo nome"), 409
-
-
 def item_payload(data):
     return (
         (data.get("name") or "").strip(),
@@ -837,29 +712,6 @@ def save_custom_values(conn, item_id, type_id, values):
                 "INSERT INTO item_custom_values(item_id,field_id,value) VALUES(?,?,?)",
                 (item_id, int(fid), value),
             )
-
-
-@app.delete("/api/types/<int:type_id>")
-def api_delete_type(type_id):
-    with db() as conn:
-        row = conn.execute(
-            "SELECT name FROM item_types WHERE id=?",
-            (type_id,),
-        ).fetchone()
-        if not row:
-            return jsonify(error="Tipologia non trovata"), 404
-
-        used = conn.execute(
-            "SELECT COUNT(*) FROM items WHERE item_type_id=?",
-            (type_id,),
-        ).fetchone()[0]
-        if used:
-            return jsonify(
-                error=f"Impossibile eliminare la tipologia: è usata da {used} elemento/i. Cambia prima la tipologia di questi elementi."
-            ), 409
-
-        conn.execute("DELETE FROM item_types WHERE id=?", (type_id,))
-        return jsonify(ok=True)
 
 
 @app.post("/api/items")
@@ -938,6 +790,13 @@ app.register_blueprint(
         backup_keep_manual=BACKUP_KEEP_MANUAL,
         get_startup_error=lambda: STARTUP_DB_ERROR,
         restore_database_backup=restore_database_backup,
+    )
+)
+
+
+app.register_blueprint(
+    create_type_blueprint(
+        db=db,
     )
 )
 
