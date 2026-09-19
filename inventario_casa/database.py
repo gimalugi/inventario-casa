@@ -1,4 +1,7 @@
 import sqlite3
+from datetime import datetime
+
+from backup import create_pre_migration_backup
 
 
 def db(db_path, data_dir, media_dir):
@@ -123,4 +126,155 @@ def ensure_type_field(
                 options,
                 sort_order,
             ),
+        )
+
+
+def init_db(
+    db_path,
+    data_dir,
+    media_dir,
+    backup_dir,
+    current_schema_version,
+):
+    # Le tipologie standard vengono create esclusivamente quando il database
+    # viene creato per la prima volta. Dopo l'inizializzazione, tipologie e
+    # campi appartengono all'utente e non devono essere ricreati al riavvio.
+    new_database = not db_path.exists()
+
+    previous_schema_version = read_schema_version(db_path)
+
+    if (
+        db_path.exists()
+        and previous_schema_version < current_schema_version
+    ):
+        print(
+            "[Inventario Casa] Migrazione schema richiesta: "
+            f"{previous_schema_version} -> {current_schema_version}"
+        )
+
+        create_pre_migration_backup(
+            db_path,
+            backup_dir,
+            previous_schema_version,
+            current_schema_version,
+        )
+
+    with db(db_path, data_dir, media_dir) as conn:
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS item_types (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                icon TEXT DEFAULT '📦',
+                subgroup_field_id INTEGER,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                quantity INTEGER NOT NULL DEFAULT 1,
+                item_type_id INTEGER,
+                environment TEXT DEFAULT '',
+                furniture TEXT DEFAULT '',
+                shelf TEXT DEFAULT '',
+                container_name TEXT DEFAULT '',
+                container_code TEXT DEFAULT '',
+                tags TEXT DEFAULT '',
+                notes TEXT DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY(item_type_id) REFERENCES item_types(id) ON DELETE SET NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS type_fields (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type_id INTEGER NOT NULL,
+                label TEXT NOT NULL,
+                field_type TEXT NOT NULL DEFAULT 'text',
+                required INTEGER NOT NULL DEFAULT 0,
+                options TEXT DEFAULT '',
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY(type_id) REFERENCES item_types(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS item_custom_values (
+                item_id INTEGER NOT NULL,
+                field_id INTEGER NOT NULL,
+                value TEXT DEFAULT '',
+                PRIMARY KEY(item_id, field_id),
+                FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE,
+                FOREIGN KEY(field_id) REFERENCES type_fields(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS item_photos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                thumb_filename TEXT NOT NULL,
+                label TEXT DEFAULT '',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_items_name ON items(name);
+            CREATE INDEX IF NOT EXISTS idx_items_type ON items(item_type_id);
+            CREATE INDEX IF NOT EXISTS idx_items_environment ON items(environment);
+            """
+        )
+
+        ensure_column(conn, "items", "environment", "TEXT DEFAULT ''")
+        ensure_column(conn, "items", "furniture", "TEXT DEFAULT ''")
+        ensure_column(conn, "items", "shelf", "TEXT DEFAULT ''")
+        ensure_column(conn, "items", "container_name", "TEXT DEFAULT ''")
+        ensure_column(conn, "type_fields", "active", "INTEGER NOT NULL DEFAULT 1")
+        ensure_column(conn, "type_fields", "placeholder", "TEXT DEFAULT ''")
+        ensure_column(conn, "item_types", "subgroup_field_id", "INTEGER")
+
+        # Migrazione foto da versioni precedenti:
+        # alcune versioni usavano 'caption' invece di 'label'.
+        photo_cols = table_columns(conn, "item_photos")
+        if "label" not in photo_cols:
+            conn.execute("ALTER TABLE item_photos ADD COLUMN label TEXT DEFAULT ''")
+            photo_cols.add("label")
+        if "caption" in photo_cols:
+            conn.execute(
+                "UPDATE item_photos "
+                "SET label=caption "
+                "WHERE TRIM(COALESCE(label,''))='' "
+                "AND TRIM(COALESCE(caption,''))<>''"
+            )
+
+        # Tipologie iniziali: vengono proposte soltanto su un database nuovo.
+        # Dopo la prima inizializzazione l'utente può modificarle o eliminarle
+        # e Inventario Casa non le ricreerà automaticamente.
+        if new_database:
+            now = datetime.now().isoformat(timespec="seconds")
+            defaults = [
+                ("Apparecchiature elettroniche", "🔌"),
+                ("Libri", "📚"),
+                ("Oggetti", "📦"),
+            ]
+            for name, icon in defaults:
+                conn.execute(
+                    "INSERT OR IGNORE INTO item_types(name,icon,created_at) VALUES(?,?,?)",
+                    (name, icon, now),
+                )
+
+            libri = [
+                ("Autore", "text", 0, ""),
+                ("ISBN", "text", 0, ""),
+                ("Editore", "text", 0, ""),
+                ("Anno", "number", 0, ""),
+            ]
+            for idx, f in enumerate(libri):
+                ensure_type_field(conn, "Libri", *f, sort_order=idx)
+
+        write_schema_version(conn, current_schema_version)
+
+        print(
+            "[Inventario Casa] Schema database verificato: "
+            f"versione {current_schema_version}"
         )
