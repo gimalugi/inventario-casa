@@ -15,6 +15,7 @@ COPY app.py /app/app.py
 COPY frontend.py /app/frontend.py
 COPY database.py /app/database.py
 COPY backup.py /app/backup.py
+COPY backup_routes.py /app/backup_routes.py
 COPY templates /app/templates
 COPY static /app/static
 COPY wsgi.py /app/wsgi.py

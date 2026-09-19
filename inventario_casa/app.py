@@ -12,6 +12,7 @@ import threading
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from frontend import FRONTEND_ASSETS, asset_version, load_translations
+from backup_routes import create_backup_blueprint
 from database import (
     db as database_connect,
     table_columns,
@@ -1146,71 +1147,16 @@ def api_delete_photo(photo_id):
 
 
 
-@app.get("/api/backups")
-def api_backups():
-    return jsonify(
-        backups=backup_list(DB_BACKUP_DIR),
-        startup_error=STARTUP_DB_ERROR,
-        current_database=inspect_database_file(DB_PATH),
+app.register_blueprint(
+    create_backup_blueprint(
+        db_path=DB_PATH,
+        backup_dir=DB_BACKUP_DIR,
+        maintenance_lock=DB_MAINTENANCE_LOCK,
+        backup_keep_manual=BACKUP_KEEP_MANUAL,
+        get_startup_error=lambda: STARTUP_DB_ERROR,
+        restore_database_backup=restore_database_backup,
     )
-
-
-@app.post("/api/backups/create")
-def api_create_backup():
-    try:
-        with DB_MAINTENANCE_LOCK:
-            path = backup_create(DB_PATH, DB_BACKUP_DIR, prefix="inventory_manual")
-            apply_backup_retention(
-                DB_BACKUP_DIR,
-                "manual",
-                BACKUP_KEEP_MANUAL,
-            )
-
-        return jsonify(
-            ok=True,
-            filename=path.name,
-            database=inspect_database_file(path),
-        ), 201
-
-    except Exception as exc:
-        return jsonify(error=str(exc)), 500
-
-
-@app.post("/api/backups/restore")
-def api_restore_backup():
-    data = request.get_json(silent=True) or {}
-    filename = data.get("filename")
-
-    try:
-        result = restore_database_backup(filename)
-
-        return jsonify(**result)
-
-    except FileNotFoundError as exc:
-        return jsonify(error=str(exc)), 404
-
-    except ValueError as exc:
-        return jsonify(error=str(exc)), 400
-
-    except Exception as exc:
-        return jsonify(
-            error=str(exc),
-            startup_error=STARTUP_DB_ERROR,
-        ), 500
-
-
-@app.get("/api/backups/download/<path:filename>")
-def api_download_backup(filename):
-    try:
-        path = resolve_backup_path(DB_BACKUP_DIR, filename)
-    except (ValueError, FileNotFoundError):
-        return jsonify(error="Backup non trovato"), 404
-
-    return send_from_directory(
-        DB_BACKUP_DIR,
-        path.name,
-        as_attachment=True,
-    )
+)
 
 
 @app.get("/files/<path:filename>")
