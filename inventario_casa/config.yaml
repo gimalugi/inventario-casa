@@ -18,5 +18,14 @@ backup: cold
 map:
   - type: media
     read_only: false
-options: {}
-schema: {}
+options:
+  default_language: "it"
+  backup_keep_manual: 10
+  backup_keep_pre_restore: 5
+  backup_keep_pre_schema: 5
+
+schema:
+  default_language: "list(it|en)"
+  backup_keep_manual: "int(1,100)"
+  backup_keep_pre_restore: "int(1,100)"
+  backup_keep_pre_schema: "int(1,100)"

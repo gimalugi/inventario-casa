@@ -1,0 +1,13 @@
+configuration:
+  default_language:
+    name: Default language
+    description: Language used when Inventario Casa starts
+  backup_keep_manual:
+    name: Manual backups to keep
+    description: Maximum number of manual backups to retain
+  backup_keep_pre_restore:
+    name: Pre-restore backups to keep
+    description: Maximum number of automatic backups created before a restore
+  backup_keep_pre_schema:
+    name: Pre-migration backups to keep
+    description: Maximum number of automatic backups created before a database migration

@@ -12,7 +12,11 @@ function detectInitialLanguage(){
   const saved=localStorage.getItem(LANGUAGE_STORAGE_KEY);
   if(saved && window.INVENTORY_I18N[saved]) return saved;
 
-  // 2. Lingua dell'interfaccia Home Assistant, quando accessibile.
+  // 2. Lingua predefinita configurata nell'add-on.
+  const configured=(window.INVENTORY_DEFAULT_LANGUAGE||'').toLowerCase();
+  if(configured && window.INVENTORY_I18N[configured]) return configured;
+
+  // 3. Lingua dell'interfaccia Home Assistant, quando accessibile.
   try{
     if(window.parent && window.parent!==window){
       const haLanguage=(
@@ -27,13 +31,13 @@ function detectInitialLanguage(){
     // in quel caso usiamo normalmente la lingua del browser.
   }
 
-  // 3. Lingua del browser/dispositivo.
+  // 4. Lingua del browser/dispositivo.
   const browserLanguage=(navigator.language||'it').toLowerCase();
 
   if(browserLanguage.startsWith('it')) return 'it';
   if(browserLanguage.startsWith('en')) return 'en';
 
-  // 4. Lingua predefinita per quelle non ancora supportate.
+  // 5. Lingua predefinita per quelle non ancora supportate.
   return 'it';
 }
 

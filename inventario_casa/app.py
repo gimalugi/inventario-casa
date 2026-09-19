@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template, render_template_string, send_from_directory
 import sqlite3
+import os
 from pathlib import Path
 from datetime import datetime
 from PIL import Image, ImageOps
@@ -26,9 +27,22 @@ from backup import (
     backup_path_from_name as resolve_backup_path,
     create_database_backup as backup_create,
     list_database_backups as backup_list,
+    apply_backup_retention,
 )
 
 APP_NAME = "Inventario Casa"
+
+def env_int(name, default, minimum=1):
+    try:
+        value = int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, value)
+
+
+BACKUP_KEEP_MANUAL = env_int("INVENTORY_BACKUP_KEEP_MANUAL", 10)
+BACKUP_KEEP_PRE_RESTORE = env_int("INVENTORY_BACKUP_KEEP_PRE_RESTORE", 5)
+BACKUP_KEEP_PRE_SCHEMA = env_int("INVENTORY_BACKUP_KEEP_PRE_SCHEMA", 5)
 DATA_DIR = Path("/data/inventario_casa")
 DB_PATH = DATA_DIR / "inventario.db"
 MEDIA_DIR = Path("/media/inventario_casa/oggetti")
@@ -90,6 +104,11 @@ def restore_database_backup(filename):
                     DB_BACKUP_DIR,
                     prefix="inventory_pre_restore",
                     verify=True,
+                )
+                apply_backup_retention(
+                    DB_BACKUP_DIR,
+                    "pre_restore",
+                    BACKUP_KEEP_PRE_RESTORE,
                 )
             except Exception as exc:
                 safety_warning = (
@@ -205,6 +224,7 @@ def init_db():
         MEDIA_DIR,
         DB_BACKUP_DIR,
         CURRENT_SCHEMA_VERSION,
+        BACKUP_KEEP_PRE_SCHEMA,
     )
 
 try:
@@ -1140,6 +1160,11 @@ def api_create_backup():
     try:
         with DB_MAINTENANCE_LOCK:
             path = backup_create(DB_PATH, DB_BACKUP_DIR, prefix="inventory_manual")
+            apply_backup_retention(
+                DB_BACKUP_DIR,
+                "manual",
+                BACKUP_KEEP_MANUAL,
+            )
 
         return jsonify(
             ok=True,
@@ -1526,5 +1551,6 @@ def index():
         "index.html",
         asset_version=FRONTEND_ASSET_VERSION,
         translations=FRONTEND_TRANSLATIONS,
+        default_language=os.environ.get("INVENTORY_LANGUAGE", "it"),
     )
 

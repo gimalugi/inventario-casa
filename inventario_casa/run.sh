@@ -5,6 +5,11 @@ DATA_DIR="/data/inventario_casa"
 DB_PATH="${DATA_DIR}/inventario.db"
 MEDIA_DIR="/media/inventario_casa/oggetti"
 
+export INVENTORY_LANGUAGE="$(bashio::config 'default_language')"
+export INVENTORY_BACKUP_KEEP_MANUAL="$(bashio::config 'backup_keep_manual')"
+export INVENTORY_BACKUP_KEEP_PRE_RESTORE="$(bashio::config 'backup_keep_pre_restore')"
+export INVENTORY_BACKUP_KEEP_PRE_SCHEMA="$(bashio::config 'backup_keep_pre_schema')"
+
 if [ -f "${DB_PATH}" ]; then
     bashio::log.info "[Inventario Casa] Database esistente rilevato."
     FIRST_START=0

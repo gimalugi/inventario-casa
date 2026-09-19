@@ -1,0 +1,13 @@
+configuration:
+  default_language:
+    name: Lingua predefinita
+    description: Lingua utilizzata all'avvio di Inventario Casa
+  backup_keep_manual:
+    name: Backup manuali da conservare
+    description: Numero massimo di backup manuali da mantenere
+  backup_keep_pre_restore:
+    name: Backup pre-ripristino da conservare
+    description: Numero massimo di backup automatici creati prima di un ripristino
+  backup_keep_pre_schema:
+    name: Backup pre-migrazione da conservare
+    description: Numero massimo di backup automatici creati prima di una migrazione del database

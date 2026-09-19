@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 
-from backup import create_pre_migration_backup
+from backup import create_pre_migration_backup, apply_backup_retention
 
 
 def db(db_path, data_dir, media_dir):
@@ -135,6 +135,7 @@ def init_db(
     media_dir,
     backup_dir,
     current_schema_version,
+    backup_keep_pre_schema=5,
 ):
     # Le tipologie standard vengono create esclusivamente quando il database
     # viene creato per la prima volta. Dopo l'inizializzazione, tipologie e
@@ -157,6 +158,11 @@ def init_db(
             backup_dir,
             previous_schema_version,
             current_schema_version,
+        )
+        apply_backup_retention(
+            backup_dir,
+            "pre_schema",
+            backup_keep_pre_schema,
         )
 
     with db(db_path, data_dir, media_dir) as conn:

@@ -200,3 +200,41 @@ def list_database_backups(backup_dir):
         })
 
     return rows
+
+
+BACKUP_RETENTION_PREFIXES = {
+    "manual": "inventory_manual",
+    "pre_restore": "inventory_pre_restore",
+    "pre_schema": "inventory_pre_schema",
+}
+
+
+def apply_backup_retention(backup_dir, category, keep):
+    """Rimuove i backup più vecchi della categoria oltre il limite indicato."""
+    backup_dir = Path(backup_dir)
+
+    if category not in BACKUP_RETENTION_PREFIXES:
+        raise ValueError(f"Categoria backup non valida: {category}")
+
+    keep = int(keep)
+    if keep < 1:
+        raise ValueError("Il numero di backup da conservare deve essere almeno 1")
+
+    prefix = BACKUP_RETENTION_PREFIXES[category]
+
+    backups = sorted(
+        (
+            path for path in backup_dir.glob(f"{prefix}_*.db")
+            if path.is_file()
+        ),
+        key=lambda path: (path.stat().st_mtime, path.name),
+        reverse=True,
+    )
+
+    removed = []
+
+    for path in backups[keep:]:
+        path.unlink()
+        removed.append(path)
+
+    return removed
