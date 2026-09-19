@@ -12,6 +12,7 @@ COPY requirements.txt /app/requirements.txt
 RUN pip3 install --no-cache-dir --break-system-packages -r /app/requirements.txt
 
 COPY app.py /app/app.py
+COPY frontend.py /app/frontend.py
 COPY templates /app/templates
 COPY static /app/static
 COPY wsgi.py /app/wsgi.py

@@ -1,4 +1,3 @@
-import hashlib
 from flask import Flask, request, jsonify, render_template, render_template_string, send_from_directory
 import sqlite3
 from pathlib import Path
@@ -11,6 +10,7 @@ import re
 import threading
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
+from frontend import FRONTEND_ASSETS, asset_version, load_translations
 
 APP_NAME = "Inventario Casa"
 DATA_DIR = Path("/data/inventario_casa")
@@ -1884,34 +1884,8 @@ loadBackups();
 
 
 
-FRONTEND_ASSETS = (
-    "css/app.css",
-    "js/app.js",
-    "translations/it.json",
-    "translations/en.json",
-)
-
-def frontend_asset_version():
-    digest = hashlib.sha256()
-    static_dir = Path(app.static_folder)
-
-    for filename in FRONTEND_ASSETS:
-        digest.update((static_dir / filename).read_bytes())
-
-    return digest.hexdigest()[:12]
-
-FRONTEND_ASSET_VERSION = frontend_asset_version()
-
-def load_frontend_translations():
-    translations_dir = Path(app.static_folder) / "translations"
-
-    return {
-        "it": json.loads((translations_dir / "it.json").read_text(encoding="utf-8")),
-        "en": json.loads((translations_dir / "en.json").read_text(encoding="utf-8")),
-    }
-
-FRONTEND_TRANSLATIONS = load_frontend_translations()
-
+FRONTEND_ASSET_VERSION = asset_version(app.static_folder)
+FRONTEND_TRANSLATIONS = load_translations(app.static_folder)
 
 
 @app.get("/assets/<version>/<path:filename>")
