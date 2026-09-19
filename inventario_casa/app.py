@@ -1886,8 +1886,9 @@ loadBackups();
 
 FRONTEND_ASSETS = (
     "css/app.css",
-    "js/translations.js",
     "js/app.js",
+    "translations/it.json",
+    "translations/en.json",
 )
 
 def frontend_asset_version():
@@ -1900,6 +1901,17 @@ def frontend_asset_version():
     return digest.hexdigest()[:12]
 
 FRONTEND_ASSET_VERSION = frontend_asset_version()
+
+def load_frontend_translations():
+    translations_dir = Path(app.static_folder) / "translations"
+
+    return {
+        "it": json.loads((translations_dir / "it.json").read_text(encoding="utf-8")),
+        "en": json.loads((translations_dir / "en.json").read_text(encoding="utf-8")),
+    }
+
+FRONTEND_TRANSLATIONS = load_frontend_translations()
+
 
 
 @app.get("/assets/<version>/<path:filename>")
@@ -1920,5 +1932,9 @@ def index():
             RECOVERY_PAGE,
             startup_error=STARTUP_DB_ERROR,
         )
-    return render_template("index.html", asset_version=FRONTEND_ASSET_VERSION)
+    return render_template(
+        "index.html",
+        asset_version=FRONTEND_ASSET_VERSION,
+        translations=FRONTEND_TRANSLATIONS,
+    )
 

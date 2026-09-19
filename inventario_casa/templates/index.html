@@ -371,7 +371,9 @@
        data-i18n-alt="item_photo">
 </div>
 
-<script src="assets/{{ asset_version }}/js/translations.js"></script>
+<script>
+window.INVENTORY_I18N = {{ translations | tojson }};
+</script>
 <script src="assets/{{ asset_version }}/js/app.js"></script>
 </body>
 </html>
