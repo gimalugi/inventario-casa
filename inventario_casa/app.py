@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from frontend import FRONTEND_ASSETS, asset_version, load_translations
 from backup_routes import create_backup_blueprint
+from backup_restore import restore_database_backup as backup_restore_database
 from database import (
     db as database_connect,
     table_columns,
@@ -21,14 +22,6 @@ from database import (
     ensure_column,
     ensure_type_field,
     init_db as database_init,
-)
-from backup import (
-    create_pre_migration_backup as backup_pre_migration,
-    inspect_database_file,
-    backup_path_from_name as resolve_backup_path,
-    create_database_backup as backup_create,
-    list_database_backups as backup_list,
-    apply_backup_retention,
 )
 
 APP_NAME = "Inventario Casa"
@@ -69,153 +62,22 @@ def read_schema_version():
 
 
 
-def restore_database_backup(filename):
-    """
-    Ripristina un backup verificato.
-
-    Il backup viene prima copiato in un database SQLite temporaneo,
-    verificato e solo dopo sostituisce atomicamente il database corrente.
-    Questo permette il recovery anche quando il DB corrente è corrotto.
-    """
+def set_startup_db_error(value):
     global STARTUP_DB_ERROR
-
-    with DB_MAINTENANCE_LOCK:
-        backup_path = resolve_backup_path(DB_BACKUP_DIR, filename)
-
-        # 1. Verifica preventiva del backup scelto.
-        backup_info = inspect_database_file(backup_path)
-
-        if backup_info.get("integrity") != "ok":
-            raise RuntimeError(
-                "Il backup selezionato non supera il controllo di integrità"
-            )
-
-        safety_backup = None
-        safety_warning = None
-
-        # 2. Prova a salvare il DB corrente prima del restore.
-        #
-        # In Recovery Mode il database corrente può essere illeggibile:
-        # in quel caso il mancato safety backup NON deve impedire il
-        # ripristino di un backup valido.
-        if DB_PATH.exists():
-            try:
-                safety_backup = backup_create(
-                    DB_PATH,
-                    DB_BACKUP_DIR,
-                    prefix="inventory_pre_restore",
-                    verify=True,
-                )
-                apply_backup_retention(
-                    DB_BACKUP_DIR,
-                    "pre_restore",
-                    BACKUP_KEEP_PRE_RESTORE,
-                )
-            except Exception as exc:
-                safety_warning = (
-                    "Impossibile creare il backup di sicurezza del "
-                    f"database corrente: {type(exc).__name__}: {exc}"
-                )
-                print(
-                    "[Inventario Casa] ATTENZIONE: "
-                    + safety_warning
-                )
-
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-        stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        restore_tmp = DATA_DIR / f".inventario_restore_{stamp}.db"
-
-        source = None
-        target = None
-
-        try:
-            # 3. Ricostruisce il backup in un NUOVO DB.
-            #
-            # Non utilizziamo DB_PATH come destinazione perché potrebbe
-            # essere un file SQLite corrotto.
-            source = sqlite3.connect(str(backup_path))
-            target = sqlite3.connect(str(restore_tmp))
-
-            source.backup(target)
-            target.commit()
-
-            target.close()
-            target = None
-
-            source.close()
-            source = None
-
-            # 4. Verifica il DB temporaneo PRIMA di sostituire quello attivo.
-            restored_info = inspect_database_file(restore_tmp)
-
-            if restored_info.get("integrity") != "ok":
-                raise RuntimeError(
-                    "Il database ripristinato non supera "
-                    "il controllo di integrità"
-                )
-
-            # 5. Elimina eventuali WAL/SHM del vecchio database.
-            for suffix in ("-wal", "-shm"):
-                sidecar = Path(str(DB_PATH) + suffix)
-                try:
-                    sidecar.unlink()
-                except FileNotFoundError:
-                    pass
-
-            # 6. Sostituzione atomica del database corrente.
-            restore_tmp.replace(DB_PATH)
-
-            # 7. Esegue eventuali migrazioni necessarie.
-            init_db()
-
-            # 8. Verifica finale dopo init/migrazioni.
-            final_info = inspect_database_file(DB_PATH)
-
-            if final_info.get("integrity") != "ok":
-                raise RuntimeError(
-                    "Il database non supera il controllo "
-                    "di integrità dopo il ripristino"
-                )
-
-            STARTUP_DB_ERROR = None
-
-            return {
-                "ok": True,
-                "filename": backup_path.name,
-                "safety_backup": (
-                    safety_backup.name
-                    if safety_backup is not None
-                    else None
-                ),
-                "safety_warning": safety_warning,
-                "database": final_info,
-            }
-
-        except Exception as exc:
-            STARTUP_DB_ERROR = f"{type(exc).__name__}: {exc}"
-
-            print(
-                "[Inventario Casa] ERRORE ripristino database: "
-                + STARTUP_DB_ERROR
-            )
-
-            raise
-
-        finally:
-            if target is not None:
-                target.close()
-
-            if source is not None:
-                source.close()
-
-            if restore_tmp.exists():
-                try:
-                    restore_tmp.unlink()
-                except Exception:
-                    pass
+    STARTUP_DB_ERROR = value
 
 
+def restore_database_backup(filename):
+    return backup_restore_database(
+        filename,
+        db_path=DB_PATH,
+        data_dir=DATA_DIR,
+        backup_dir=DB_BACKUP_DIR,
+        maintenance_lock=DB_MAINTENANCE_LOCK,
+        backup_keep_pre_restore=BACKUP_KEEP_PRE_RESTORE,
+        init_db=init_db,
+        set_startup_error=set_startup_db_error,
+    )
 
 
 def init_db():
