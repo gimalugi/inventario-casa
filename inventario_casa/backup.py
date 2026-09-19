@@ -8,7 +8,7 @@ def create_pre_migration_backup(db_path, backup_dir, from_version, to_version):
 
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     backup_path = backup_dir / (
-        f"inventario_pre_schema_{from_version}_to_{to_version}_{stamp}.db"
+        f"inventory_pre_schema_{from_version}_to_{to_version}_{stamp}.db"
     )
 
     source = sqlite3.connect(db_path)
@@ -142,7 +142,7 @@ def backup_path_from_name(backup_dir, filename):
     return path
 
 
-def create_database_backup(db_path, backup_dir, prefix="inventario_manuale", verify=True):
+def create_database_backup(db_path, backup_dir, prefix="inventory_manual", verify=True):
     """Crea una copia SQLite consistente del database corrente."""
     if not db_path.exists():
         raise FileNotFoundError("Database principale non trovato")

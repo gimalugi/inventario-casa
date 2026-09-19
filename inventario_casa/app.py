@@ -87,7 +87,7 @@ def restore_database_backup(filename):
                 safety_backup = backup_create(
                     DB_PATH,
                     DB_BACKUP_DIR,
-                    prefix="inventario_pre_restore",
+                    prefix="inventory_pre_restore",
                     verify=True,
                 )
             except Exception as exc:
@@ -1274,7 +1274,7 @@ def api_backups():
 def api_create_backup():
     try:
         with DB_MAINTENANCE_LOCK:
-            path = backup_create(DB_PATH, DB_BACKUP_DIR, prefix="inventario_manuale")
+            path = backup_create(DB_PATH, DB_BACKUP_DIR, prefix="inventory_manual")
 
         return jsonify(
             ok=True,
