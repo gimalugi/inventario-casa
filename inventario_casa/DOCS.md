@@ -112,16 +112,88 @@ Il servizio rimane disponibile per rispondere alle richieste dell'interfaccia e 
 
 ---
 
-## Versione 2.2.1
+## 📋 Cronologia delle versioni
 
-Questa versione introduce:
+### 2.5.2 — Sidebar e Impostazioni
 
-- collegamento dinamico al tema grafico di Home Assistant tramite Ingress;
-- mantenimento della grafica Inventario Casa come fallback;
-- pulsante **×** per cancellare rapidamente la ricerca;
-- font maggiormente coerente con l'interfaccia Home Assistant;
-- nessuna modifica al database o ai dati dell'inventario.
+- Introdotta la nuova sidebar di navigazione.
+- Aggiunte viste dedicate per Inventario, Nuovo elemento, Tipologie e Backup.
+- Aggiunta la nuova pagina Impostazioni.
+- Spostata la selezione della lingua dall'header alla pagina Impostazioni.
+- Aggiornate le traduzioni italiano/inglese.
+- Migliorato il layout responsive della sidebar e delle nuove viste.
+- Allineati campo di ricerca e pulsante lente nell'header.
+- Nessuna modifica allo schema del database.
 
+### 2.5.0 — Riorganizzazione dell'architettura
+
+- Riorganizzata l'architettura interna dell'applicazione.
+- Separati frontend, CSS e JavaScript dal backend principale.
+- Suddivise le API in moduli dedicati.
+- Separata la gestione database, migrazioni e Backup & Restore.
+- Aggiunta la configurazione della retention dei backup.
+- Consolidata la gestione multilingua tramite file dedicati.
+- Migliorata la gestione della cache degli asset frontend.
+- Separata la pagina Recovery dal backend principale.
+- Corretti problemi nella procedura di ripristino.
+- Mantenuta la compatibilità con database, schema e dati esistenti.
+
+### 2.4.x — Multilingua e gestione dell'interfaccia
+
+- Introdotto il supporto completo Italiano/Inglese.
+- Aggiunto il selettore manuale della lingua con memorizzazione della preferenza.
+- Rilevamento automatico della lingua di Home Assistant con fallback sulla lingua del browser.
+- Estesa la localizzazione a elementi, tipologie, ricerca, gruppi, paginazione e Backup & Restore.
+- Aggiunta l'interfaccia Recovery in Italiano e Inglese.
+- Migliorata la gestione delle foto e delle miniature.
+- Corrette varie problematiche di caricamento asincrono e ripristino della vista.
+
+### 2.3.x — Backup, Recovery e fotocamera
+
+- Introdotta la sezione Backup database nell'interfaccia.
+- Aggiunta la creazione manuale di backup SQLite consistenti.
+- Aggiunti controllo di integrità, download e ripristino guidato.
+- Aggiunto il backup automatico prima del restore.
+- Introdotta la modalità Recovery in caso di problemi di inizializzazione o migrazione.
+- Migliorata progressivamente la grafica della pagina Backup.
+- Migliorata la compatibilità della fotocamera con connessioni HTTPS.
+- Mantenuto il fallback tramite acquisizione fotografica.
+- Migliorata l'integrazione grafica con il tema Home Assistant.
+- Corrette varie problematiche di compatibilità della pagina Recovery.
+- Introdotta la gestione delle tipologie predefinite solo alla prima inizializzazione del database.
+
+### 2.2.x — Tema Home Assistant, migrazioni e UX
+
+- Collegamento dinamico al tema grafico di Home Assistant tramite Ingress.
+- Mantenimento del tema predefinito come fallback.
+- Introdotta la versione interna dello schema SQLite.
+- Aggiunta la tabella tecnica `app_meta`.
+- Backup automatico prima delle migrazioni dello schema.
+- Verifica dei backup tramite `PRAGMA integrity_check`.
+- Miglioramenti dell'interfaccia mobile.
+- Aggiunti pulsanti di chiusura alle principali finestre.
+- Migliorata la ricerca con cancellazione rapida tramite pulsante ×.
+
+### 2.1.x — Raccolte, paginazione e visualizzazione
+
+- Introdotti i sottoraggruppamenti configurabili per tipologia.
+- Aggiunta la paginazione reale per gruppi e sottogruppi.
+- Migliorata la gestione di raccolte molto grandi.
+- Introdotto l'ordinamento numerico naturale.
+- Gestito il campo `Suffisso numero`.
+- Aggiunta l'anteprima degli elementi con miniature delle fotografie.
+- Introdotta la modale compatta di sola lettura per i dettagli degli elementi.
+
+### 2.0.0 — Evoluzione dell'applicazione
+
+La versione 2.0.0 rappresenta la base della generazione 2.x dell'applicazione.  
+I dettagli delle modifiche storiche sono disponibili nel `CHANGELOG.md`.
+
+### 0.1.x — Versioni iniziali
+
+Le prime versioni del progetto hanno introdotto progressivamente le funzioni fondamentali di catalogazione, gestione delle tipologie, posizione, fotografie, ricerca e personalizzazione.
+
+La cronologia completa delle versioni 0.1.x è disponibile nel `CHANGELOG.md`.
 
 ## Sicurezza database e migrazioni
 
