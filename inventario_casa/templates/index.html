@@ -10,6 +10,83 @@
 
 </head>
 <body>
+
+<button id="mobileMenuBtn"
+        class="mobile-menu-btn"
+        type="button"
+        onclick="toggleAppSidebar()"
+        aria-label="Apri menu"
+        title="Menu">☰</button>
+
+<div id="sidebarOverlay"
+     class="sidebar-overlay"
+     onclick="closeAppSidebar()"></div>
+
+<nav id="appSidebar" class="app-sidebar">
+
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-icon">🏠</div>
+    <div class="sidebar-brand-text">
+      <strong data-i18n="app_name">Inventario Casa</strong>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+
+    <button type="button"
+            class="sidebar-item active"
+            onclick="sidebarGoInventory()"
+            title="Inventario">
+      <span class="sidebar-icon">📦</span>
+      <span class="sidebar-label" data-i18n="sidebar_inventory">Inventario</span>
+    </button>
+
+    <button type="button"
+            class="sidebar-item"
+            onclick="sidebarNewItem()"
+            title="Nuovo elemento">
+      <span class="sidebar-icon">➕</span>
+      <span class="sidebar-label" data-i18n="new_item">Nuovo elemento</span>
+    </button>
+
+    <button type="button"
+            class="sidebar-item"
+            onclick="sidebarTypes()"
+            title="Tipologie">
+      <span class="sidebar-icon">🏷️</span>
+      <span class="sidebar-label" data-i18n="types">Tipologie</span>
+    </button>
+
+    <button type="button"
+            class="sidebar-item"
+            onclick="sidebarBackup()"
+            title="Backup">
+      <span class="sidebar-icon">🗄️</span>
+      <span class="sidebar-label" data-i18n="sidebar_backup">Backup</span>
+    </button>
+
+    <button type="button"
+            class="sidebar-item"
+            onclick="sidebarSettings()"
+            title="Impostazioni"
+            data-i18n-title="sidebar_settings">
+      <span class="sidebar-icon">⚙️</span>
+      <span class="sidebar-label" data-i18n="sidebar_settings">Impostazioni</span>
+    </button>
+
+  </div>
+
+  <button type="button"
+          class="sidebar-collapse"
+          onclick="toggleSidebarCollapsed()"
+          title="Comprimi menu">
+    <span class="sidebar-collapse-icon">◀</span>
+    <span class="sidebar-label" data-i18n="sidebar_collapse">Comprimi</span>
+  </button>
+
+</nav>
+
+<div class="app-shell">
 <div class="wrap">
 <header>
   <div>
@@ -29,16 +106,6 @@
               data-i18n-title="clear_search">×</button>
     </div>
     <button type="button" class="secondary" onclick="load()">🔎</button>
-    <select id="languageSelect"
-            class="language-select"
-            onchange="setLanguage(this.value)"
-            data-i18n-title="language"
-            data-i18n-aria-label="language"
-            aria-label="Lingua"
-            title="Lingua">
-      <option value="it">🌐 IT</option>
-      <option value="en">🌐 EN</option>
-    </select>
   </div>
 </header>
 
@@ -48,9 +115,40 @@
   <div class="stat"><b id="countTypes">0</b><span class="sub" data-i18n="types">tipologie</span></div>
 </div>
 
-<div class="layout">
-<main>
-  <div id="newItemPanel" class="panel new-item-panel collapsed">
+<div class="layout sidebar-layout">
+<main id="inventoryView" class="app-view active">
+  <div class="panel">
+    <div class="items-head">
+      <h2 id="itemsTitle" data-i18n="inventory_owned">📦 Cosa possiedo</h2>
+      <div class="items-head-controls">
+        <label class="items-group-wrap" title="Come raggruppare l'elenco">
+          <span data-i18n="group_by">Raggruppa</span>
+          <select id="itemsGroupBy" onchange="changeItemsGrouping(this.value)">
+            <option value="type" data-i18n="type">Tipologia</option>
+            <option value="environment">Ambiente</option>
+            <option value="none" data-i18n="none">Nessuno</option>
+          </select>
+        </label>
+        <div class="items-page-size" data-i18n-title="progressive_loading" title="Caricamento progressivo" data-i18n="per_page_50">50 per volta</div>
+      </div>
+    </div>
+    <div id="itemsListInfo" class="items-list-info"></div>
+    <div id="items"></div>
+  </div>
+</main>
+
+<section id="newItemView" class="app-view new-item-view">
+
+  <div class="view-title">
+    <div>
+      <h2>➕ <span data-i18n="new_item">Nuovo elemento</span></h2>
+      <div class="sub" data-i18n="new_item_description">
+        Inserisci un nuovo elemento nell'inventario.
+      </div>
+    </div>
+  </div>
+
+  <div id="newItemPanel" class="panel new-item-panel">
     <button type="button" class="new-item-head" onclick="toggleNewItemPanel()" aria-expanded="false">
       <span>➕ <span data-i18n="new_item">Nuovo elemento</span></span>
       <span id="newItemChevron" class="new-item-chevron">▾</span>
@@ -102,28 +200,26 @@
     </div>
   </div>
 
-  <div class="panel">
-    <div class="items-head">
-      <h2 id="itemsTitle" data-i18n="inventory_owned">📦 Cosa possiedo</h2>
-      <div class="items-head-controls">
-        <label class="items-group-wrap" title="Come raggruppare l'elenco">
-          <span data-i18n="group_by">Raggruppa</span>
-          <select id="itemsGroupBy" onchange="changeItemsGrouping(this.value)">
-            <option value="type" data-i18n="type">Tipologia</option>
-            <option value="environment">Ambiente</option>
-            <option value="none" data-i18n="none">Nessuno</option>
-          </select>
-        </label>
-        <div class="items-page-size" data-i18n-title="progressive_loading" title="Caricamento progressivo" data-i18n="per_page_50">50 per volta</div>
-      </div>
-    </div>
-    <div id="itemsListInfo" class="items-list-info"></div>
-    <div id="items"></div>
-  </div>
-</main>
+</section>
 
-<aside>
-  <div id="typePanel" class="panel type-panel">
+<section id="typesView" class="app-view">
+
+  <div class="view-title">
+    <div>
+      <h2>🏷️ <span data-i18n="types">Tipologie</span></h2>
+      <div class="sub" data-i18n="types_description">Gestisci le tipologie degli elementi dell'inventario.</div>
+    </div>
+
+    <button type="button"
+            class="types-view-add"
+            onclick="openTypeDialog()"
+            title="Nuova tipologia"
+            data-i18n-title="new_type">
+      ＋ <span data-i18n="add">Aggiungi</span>
+    </button>
+  </div>
+
+<div id="typePanel" class="panel type-panel">
     <div class="type-panel-head">
       <div class="types-header-row">
   <h2>🏷️ <span data-i18n="types">Tipologie</span></h2>
@@ -143,47 +239,34 @@
     </div>
   </div>
 
-  <div class="panel">
-    <div class="backup-panel-head">
+</section>
+
+<section id="backupView" class="app-view backup-view">
+
+  <div class="view-title">
+    <div>
       <h2>🗄️ <span data-i18n="backup_database">Backup database</span></h2>
-      <button type="button"
-              class="secondary small"
-              onclick="openBackupDialog()" data-i18n="manage">Gestisci</button>
-    </div>
-    <div class="hint" style="margin-top:8px" data-i18n="backup_description">
-      Crea copie di sicurezza e ripristina il database di Inventario Casa.
+      <div class="sub" data-i18n="backup_page_description">
+        Crea e ripristina copie di sicurezza del database.
+      </div>
     </div>
   </div>
-</aside>
-</div>
-</div>
 
-<datalist id="envs"></datalist>
-<datalist id="furns"></datalist>
-<datalist id="shelves"></datalist>
-<datalist id="containers"></datalist>
-
-<div id="backupDlg"
-     class="dialogbg"
-     onclick="if(event.target===this) closeBackupDialog()">
-  <div class="dialog">
-    <button type="button"
-            class="dialog-close-btn"
-            onclick="closeBackupDialog()"
-            data-i18n-aria-label="close"
-            data-i18n-title="close"
-            aria-label="Chiudi"
-            title="Chiudi">×</button>
-
-    <h2>🗄️ <span data-i18n="backup_database">Backup database</span></h2>
+  <div class="panel backup-page-panel">
 
     <div class="backup-info">
       <div class="backup-info-icon">ℹ️</div>
       <div>
-        <strong data-i18n="safe_persistent_backups">Backup sicuri e persistenti</strong><br>
-        <span data-i18n="backup_storage_before">I file vengono conservati in</span>
+        <strong data-i18n="safe_persistent_backups">
+          Backup sicuri e persistenti
+        </strong><br>
+        <span data-i18n="backup_storage_before">
+          I file vengono conservati in
+        </span>
         <code>/media/inventario_casa/db_backups/</code>
-        <span data-i18n="backup_storage_after">e restano disponibili anche dopo la disinstallazione dell'App.</span>
+        <span data-i18n="backup_storage_after">
+          e restano disponibili anche dopo la disinstallazione dell'App.
+        </span>
       </div>
     </div>
 
@@ -192,13 +275,21 @@
             onclick="createManualBackup()">
       <span class="backup-create-icon">＋</span>
       <span>
-        <strong data-i18n="create_backup_now">Crea backup adesso</strong>
-        <small data-i18n="save_current_database">Salva una copia del database corrente</small>
+        <strong data-i18n="create_backup_now">
+          Crea backup adesso
+        </strong>
+        <small data-i18n="save_current_database">
+          Salva una copia del database corrente
+        </small>
       </span>
     </button>
 
     <div class="backup-list-head">
-      <strong>🗄️ <span data-i18n="available_backups">Backup disponibili</span></strong>
+      <strong>
+        🗄️ <span data-i18n="available_backups">
+          Backup disponibili
+        </span>
+      </strong>
       <span id="backupCount" class="backup-count"></span>
     </div>
 
@@ -208,12 +299,53 @@
       Caricamento…
     </div>
 
-    <div class="savebar">
-      <button class="secondary"
-              onclick="closeBackupDialog()" data-i18n="close">Chiudi</button>
-    </div>
   </div>
+</section>
+
+  <section id="settingsView" class="app-view settings-view">
+    <div class="view-title">
+      <div>
+        <h2>⚙️ <span data-i18n="settings">Impostazioni</span></h2>
+        <div class="sub" data-i18n="settings_description">
+          Personalizza Inventario Casa.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel settings-page-panel">
+      <div class="settings-section">
+        <div class="settings-section-info">
+          <h3>🌐 <span data-i18n="language">Lingua</span></h3>
+          <div class="sub" data-i18n="language_description">
+            Lingua dell'interfaccia
+          </div>
+        </div>
+
+        <div class="settings-control">
+          <select id="languageSelect"
+            class="language-select"
+            onchange="setLanguage(this.value)"
+            data-i18n-title="language"
+            data-i18n-aria-label="language"
+            aria-label="Lingua"
+            title="Lingua">
+      <option value="it">🌐 IT</option>
+      <option value="en">🌐 EN</option>
+    </select>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </div>
+</div>
+
+<datalist id="envs"></datalist>
+<datalist id="furns"></datalist>
+<datalist id="shelves"></datalist>
+<datalist id="containers"></datalist>
+
+
 
 
 
@@ -377,5 +509,6 @@ window.INVENTORY_I18N = {{ translations | tojson }};
 window.INVENTORY_DEFAULT_LANGUAGE = {{ default_language | tojson }};
 </script>
 <script src="assets/{{ asset_version }}/js/app.js"></script>
+</div><!-- /app-shell -->
 </body>
 </html>

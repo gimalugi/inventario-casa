@@ -1,3 +1,14 @@
+## 2.5.2
+
+- Introdotta la nuova sidebar di navigazione.
+- Aggiunte viste dedicate per Inventario, Nuovo elemento, Tipologie e Backup.
+- Aggiunta la nuova pagina Impostazioni.
+- Spostata la selezione della lingua dall'header alla pagina Impostazioni.
+- Aggiornate le traduzioni italiano/inglese per la nuova interfaccia.
+- Migliorato il layout responsive della sidebar e delle nuove viste.
+- Allineati campo di ricerca e pulsante lente nell'header.
+- Nessuna modifica allo schema del database.
+
 ## 2.5.0
 
 - Riorganizzata l'architettura interna dell'applicazione per semplificare manutenzione e sviluppo di nuove funzionalità.

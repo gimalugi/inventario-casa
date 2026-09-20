@@ -170,5 +170,16 @@
   "shelf_placeholder": "Shelf / Drawer",
   "container_placeholder": "Container",
   "container_code_example": "Container code, e.g. C12",
-  "tags_comma": "Tags, separated by commas"
+  "tags_comma": "Tags, separated by commas",
+  "sidebar_inventory": "Inventory",
+  "sidebar_backup": "Backup",
+  "sidebar_collapse": "Collapse",
+  "sidebar_menu": "Menu",
+  "types_description": "Manage the item types in your inventory.",
+  "backup_page_description": "Create and restore database backups.",
+  "new_item_description": "Add a new item to your inventory.",
+  "sidebar_settings": "Settings",
+  "settings": "Settings",
+  "settings_description": "Customize Inventario Casa.",
+  "language_description": "Interface language"
 }

@@ -170,5 +170,16 @@
   "shelf_placeholder": "Ripiano/Cassetto",
   "container_placeholder": "Contenitore",
   "container_code_example": "Codice contenitore, es. C12",
-  "tags_comma": "Tag, separati da virgola"
+  "tags_comma": "Tag, separati da virgola",
+  "sidebar_inventory": "Inventario",
+  "sidebar_backup": "Backup",
+  "sidebar_collapse": "Comprimi",
+  "sidebar_menu": "Menu",
+  "types_description": "Gestisci le tipologie degli elementi dell'inventario.",
+  "backup_page_description": "Crea e ripristina copie di sicurezza del database.",
+  "new_item_description": "Inserisci un nuovo elemento nell'inventario.",
+  "sidebar_settings": "Impostazioni",
+  "settings": "Impostazioni",
+  "settings_description": "Personalizza Inventario Casa.",
+  "language_description": "Lingua dell'interfaccia"
 }

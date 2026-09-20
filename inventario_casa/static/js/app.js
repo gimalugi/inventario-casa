@@ -1628,3 +1628,330 @@ if(window.visualViewport){
   });
 }
 
+
+
+// =========================================================
+// INVENTARIO CASA - SIDEBAR v1
+// =========================================================
+
+function isSidebarMobile(){
+  return window.matchMedia('(max-width: 900px)').matches;
+}
+
+function toggleAppSidebar(){
+  if(isSidebarMobile()){
+    document.body.classList.toggle('sidebar-mobile-open');
+  }else{
+    toggleSidebarCollapsed();
+  }
+}
+
+function closeAppSidebar(){
+  document.body.classList.remove('sidebar-mobile-open');
+}
+
+function toggleSidebarCollapsed(){
+  if(isSidebarMobile()){
+    closeAppSidebar();
+    return;
+  }
+
+  document.body.classList.toggle('sidebar-collapsed');
+
+  try{
+    localStorage.setItem(
+      'inventarioSidebarCollapsed',
+      document.body.classList.contains('sidebar-collapsed') ? '1' : '0'
+    );
+  }catch(e){}
+}
+
+function sidebarSetActive(index){
+  document.querySelectorAll('.sidebar-item').forEach((el,i)=>{
+    el.classList.toggle('active', i === index);
+  });
+}
+
+function sidebarGoInventory(){
+  sidebarSetActive(0);
+  closeAppSidebar();
+
+  const target =
+    document.getElementById('items') ||
+    document.querySelector('main');
+
+  if(target){
+    target.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
+  }
+}
+
+function sidebarNewItem(){
+  sidebarSetActive(1);
+  closeAppSidebar();
+
+  const panel = document.getElementById('newItemPanel');
+
+  if(panel){
+    if(panel.classList.contains('collapsed') &&
+       typeof toggleNewItemPanel === 'function'){
+      toggleNewItemPanel();
+    }
+
+    setTimeout(()=>{
+      panel.scrollIntoView({
+        behavior:'smooth',
+        block:'start'
+      });
+    },50);
+  }
+}
+
+function sidebarTypes(){
+  sidebarSetActive(2);
+  closeAppSidebar();
+
+  const panel = document.getElementById('typePanel');
+
+  if(panel){
+    panel.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
+  }
+}
+
+function sidebarBackup(){
+  sidebarSetActive(3);
+  closeAppSidebar();
+
+  if(typeof openBackupDialog === 'function'){
+    openBackupDialog();
+  }
+}
+
+(function initInventorySidebar(){
+
+  try{
+    if(!isSidebarMobile() &&
+       localStorage.getItem('inventarioSidebarCollapsed') === '1'){
+      document.body.classList.add('sidebar-collapsed');
+    }
+  }catch(e){}
+
+  window.addEventListener('resize',()=>{
+    if(!isSidebarMobile()){
+      document.body.classList.remove('sidebar-mobile-open');
+    }
+  });
+
+  document.addEventListener('keydown',(event)=>{
+    if(event.key === 'Escape'){
+      closeAppSidebar();
+    }
+  });
+
+})();
+
+
+// =========================================================
+// INVENTARIO CASA - SIDEBAR v2 / NAVIGAZIONE
+// =========================================================
+
+function sidebarShowView(viewId, menuIndex){
+
+  document.querySelectorAll('.app-view').forEach(view=>{
+    view.classList.remove('active');
+  });
+
+  const view = document.getElementById(viewId);
+
+  if(view){
+    view.classList.add('active');
+  }
+
+  sidebarSetActive(menuIndex);
+  closeAppSidebar();
+
+  window.scrollTo({
+    top:0,
+    behavior:'smooth'
+  });
+}
+
+/*
+ * Queste funzioni sostituiscono intenzionalmente
+ * il comportamento della Sidebar v1.
+ */
+
+function sidebarGoInventory(){
+  sidebarShowView('inventoryView',0);
+}
+
+function sidebarNewItem(){
+
+  sidebarShowView('inventoryView',1);
+
+  const panel = document.getElementById('newItemPanel');
+
+  if(panel){
+
+    if(panel.classList.contains('collapsed') &&
+       typeof toggleNewItemPanel === 'function'){
+      toggleNewItemPanel();
+    }
+
+    setTimeout(()=>{
+      panel.scrollIntoView({
+        behavior:'smooth',
+        block:'start'
+      });
+    },80);
+  }
+}
+
+function sidebarTypes(){
+
+  sidebarShowView('typesView',2);
+
+  if(typeof renderTypes === 'function'){
+    renderTypes();
+  }
+}
+
+function sidebarBackup(){
+
+  sidebarSetActive(3);
+  closeAppSidebar();
+
+  if(typeof openBackupDialog === 'function'){
+    openBackupDialog();
+  }
+}
+
+// =========================================================
+// SIDEBAR v2 - HOME PULITA
+// =========================================================
+
+function sidebarGoInventory(){
+  document.body.classList.remove('show-new-item');
+  sidebarShowView('inventoryView',0);
+}
+
+function sidebarNewItem(){
+
+  document.body.classList.add('show-new-item');
+
+  sidebarShowView('inventoryView',1);
+
+  const panel=document.getElementById('newItemPanel');
+
+  if(panel){
+
+    if(panel.classList.contains('collapsed') &&
+       typeof toggleNewItemPanel==='function'){
+      toggleNewItemPanel();
+    }
+
+    setTimeout(()=>{
+      panel.scrollIntoView({
+        behavior:'smooth',
+        block:'start'
+      });
+    },80);
+  }
+}
+
+function sidebarTypes(){
+  document.body.classList.remove('show-new-item');
+
+  sidebarShowView('typesView',2);
+
+  if(typeof renderTypes==='function'){
+    renderTypes();
+  }
+}
+
+function sidebarBackup(){
+
+  document.body.classList.remove('show-new-item');
+
+  sidebarSetActive(3);
+  closeAppSidebar();
+
+  if(typeof openBackupDialog==='function'){
+    openBackupDialog();
+  }
+}
+
+
+// =========================================================
+// SIDEBAR v2 - BACKUP COME PAGINA
+// =========================================================
+
+function sidebarBackup(){
+  document.body.classList.remove('show-new-item');
+
+  sidebarShowView('backupView',3);
+
+  if(typeof loadBackupList === 'function'){
+    loadBackupList();
+  }
+}
+
+
+// =========================================================
+// SIDEBAR v2 - NUOVO ELEMENTO COME PAGINA
+// =========================================================
+
+function sidebarGoInventory(){
+  document.body.classList.remove('show-new-item');
+  sidebarShowView('inventoryView',0);
+}
+
+function sidebarNewItem(){
+  document.body.classList.remove('show-new-item');
+  sidebarShowView('newItemView',1);
+
+  const panel=document.getElementById('newItemPanel');
+
+  if(panel){
+    panel.classList.remove('collapsed');
+
+    const head=panel.querySelector('.new-item-head');
+    if(head){
+      head.setAttribute('aria-expanded','true');
+    }
+  }
+}
+
+function sidebarTypes(){
+  document.body.classList.remove('show-new-item');
+  sidebarShowView('typesView',2);
+
+  if(typeof renderTypes==='function'){
+    renderTypes();
+  }
+}
+
+function sidebarBackup(){
+  document.body.classList.remove('show-new-item');
+  sidebarShowView('backupView',3);
+
+  if(typeof loadBackupList==='function'){
+    loadBackupList();
+  }
+}
+
+
+
+// =========================================================
+// SIDEBAR - IMPOSTAZIONI
+// =========================================================
+
+function sidebarSettings(){
+  document.body.classList.remove('show-new-item');
+  sidebarShowView('settingsView',4);
+}

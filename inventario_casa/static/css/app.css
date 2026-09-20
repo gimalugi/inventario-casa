@@ -1527,15 +1527,13 @@ html.ha-theme-linked .search-clear{
 }
 
 /* v2.3.1 - Backup UI polish */
-#backupDlg .dialog{
+#backupView .dialog{
   width:min(760px,calc(100vw - 24px));
   max-height:88vh;
   overflow:auto;
 }
-#backupDlg h2{
-  margin:0 44px 14px 0;
-}
-#backupDlg .backup-info{
+
+#backupView .backup-info{
   display:flex;
   align-items:flex-start;
   gap:12px;
@@ -1545,7 +1543,7 @@ html.ha-theme-linked .search-clear{
   border-radius:14px;
   background:rgba(79,176,255,.08);
 }
-#backupDlg .backup-info-icon{
+#backupView .backup-info-icon{
   flex:0 0 auto;
   width:30px;
   height:30px;
@@ -1556,7 +1554,7 @@ html.ha-theme-linked .search-clear{
   border:1px solid rgba(79,176,255,.42);
   font-weight:900;
 }
-#backupDlg .backup-info code{
+#backupView .backup-info code{
   display:inline-block;
   margin-top:4px;
   padding:2px 6px;
@@ -1565,7 +1563,7 @@ html.ha-theme-linked .search-clear{
   color:#d8ecff;
   overflow-wrap:anywhere;
 }
-#backupDlg .backup-create-btn{
+#backupView .backup-create-btn{
   width:100%;
   display:flex;
   align-items:center;
@@ -1575,27 +1573,27 @@ html.ha-theme-linked .search-clear{
   border-radius:14px;
   margin-bottom:16px;
 }
-#backupDlg .backup-create-icon{
+#backupView .backup-create-icon{
   font-size:1.45rem;
   line-height:1;
 }
-#backupDlg .backup-create-btn span:last-child{
+#backupView .backup-create-btn span:last-child{
   display:flex;
   flex-direction:column;
 }
-#backupDlg .backup-create-btn small{
+#backupView .backup-create-btn small{
   margin-top:2px;
   opacity:.76;
   font-weight:500;
 }
-#backupDlg .backup-list-head{
+#backupView .backup-list-head{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:10px;
   margin:4px 0 9px;
 }
-#backupDlg .backup-count{
+#backupView .backup-count{
   min-width:28px;
   height:28px;
   padding:0 8px;
@@ -1607,7 +1605,7 @@ html.ha-theme-linked .search-clear{
   font-size:.78rem;
   font-weight:800;
 }
-#backupDlg .backup-row{
+#backupView .backup-row{
   position:relative;
   padding:14px;
   border:1.5px solid rgba(255,255,255,.30);
@@ -1615,14 +1613,14 @@ html.ha-theme-linked .search-clear{
   background:rgba(255,255,255,.045);
   box-shadow:0 8px 24px rgba(0,0,0,.14);
 }
-#backupDlg .backup-row-name{
+#backupView .backup-row-name{
   font-size:.92rem;
   line-height:1.3;
   font-weight:800;
   color:#f4f7fb;
   overflow-wrap:anywhere;
 }
-#backupDlg .backup-row-meta{
+#backupView .backup-row-meta{
   display:flex;
   gap:6px;
   flex-wrap:wrap;
@@ -1630,13 +1628,13 @@ html.ha-theme-linked .search-clear{
   font-size:.76rem;
   color:var(--inv-muted,var(--muted));
 }
-#backupDlg .backup-row-meta span{
+#backupView .backup-row-meta span{
   padding:4px 7px;
   border-radius:999px;
   background:rgba(255,255,255,.07);
   border:1px solid rgba(255,255,255,.14);
 }
-#backupDlg .backup-row-status{
+#backupView .backup-row-status{
   display:inline-flex;
   align-items:center;
   gap:5px;
@@ -1646,30 +1644,30 @@ html.ha-theme-linked .search-clear{
   font-size:.78rem;
   font-weight:800;
 }
-#backupDlg .backup-row-status.ok{
+#backupView .backup-row-status.ok{
   color:#7ce6a4;
   background:rgba(89,210,137,.10);
   border:1px solid rgba(89,210,137,.28);
 }
-#backupDlg .backup-row-status.bad{
+#backupView .backup-row-status.bad{
   color:#ff9b9b;
   background:rgba(255,95,95,.09);
   border:1px solid rgba(255,95,95,.25);
 }
-#backupDlg .backup-row-actions{
+#backupView .backup-row-actions{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:8px;
   margin-top:12px;
 }
-#backupDlg .backup-row-actions a,
-#backupDlg .backup-row-actions button{
+#backupView .backup-row-actions a,
+#backupView .backup-row-actions button{
   min-width:0;
   width:100%;
   min-height:40px;
   border-radius:11px;
 }
-#backupDlg .backup-download{
+#backupView .backup-download{
   display:flex;
   align-items:center;
   justify-content:center;
@@ -1680,22 +1678,22 @@ html.ha-theme-linked .search-clear{
   border:1px solid rgba(79,176,255,.34);
   font-weight:700;
 }
-#backupDlg .backup-restore{
+#backupView .backup-restore{
   background:rgba(255,173,66,.14);
   color:#ffd59a;
   border:1px solid rgba(255,173,66,.34);
 }
 @media(max-width:640px){
-  #backupDlg .dialog{
+  #backupView .dialog{
     width:calc(100vw - 14px);
     max-height:94vh;
     border-radius:16px;
     padding:16px 14px;
   }
-  #backupDlg .backup-row-actions{
+  #backupView .backup-row-actions{
     grid-template-columns:1fr;
   }
-  #backupDlg .backup-info{
+  #backupView .backup-info{
     padding:11px 12px;
   }
 }
@@ -1721,9 +1719,9 @@ html.ha-theme-linked .item-group-title,
 html.ha-theme-linked .item-subgroup-title,
 html.ha-theme-linked .item-preview-value,
 html.ha-theme-linked .barcode-status,
-html.ha-theme-linked #backupDlg .backup-row-name,
-html.ha-theme-linked #backupDlg .backup-info,
-html.ha-theme-linked #backupDlg .backup-list-head {
+html.ha-theme-linked #backupView .backup-row-name,
+html.ha-theme-linked #backupView .backup-info,
+html.ha-theme-linked #backupView .backup-list-head {
   color: var(--inv-ha-text) !important;
 }
 
@@ -1744,8 +1742,8 @@ html.ha-theme-linked .item-preview-label,
 html.ha-theme-linked .item-preview-photo-title,
 html.ha-theme-linked .item-preview-photo-label,
 html.ha-theme-linked .item-preview-photo-more,
-html.ha-theme-linked #backupDlg .backup-row-meta,
-html.ha-theme-linked #backupDlg .backup-create-btn small {
+html.ha-theme-linked #backupView .backup-row-meta,
+html.ha-theme-linked #backupView .backup-create-btn small {
   color: var(--inv-ha-muted) !important;
 }
 
@@ -1864,4 +1862,638 @@ select option {
 select option:checked {
   background: #8ab4f8 !important;
   color: #202124 !important;
+}
+
+
+/* =========================================================
+   INVENTARIO CASA - SIDEBAR v1
+   Aggiunta TEST v2.5.0
+   ========================================================= */
+
+:root{
+  --inv-sidebar-width:230px;
+  --inv-sidebar-collapsed:72px;
+}
+
+/* Contenitore applicazione */
+.app-shell{
+  margin-left:var(--inv-sidebar-width);
+  min-height:100vh;
+  transition:margin-left .22s ease;
+}
+
+/* Sidebar desktop */
+.app-sidebar{
+  position:fixed;
+  top:0;
+  left:0;
+  bottom:0;
+  z-index:1000;
+
+  width:var(--inv-sidebar-width);
+  padding:14px 10px;
+
+  display:flex;
+  flex-direction:column;
+
+  background:rgba(12,17,24,.76);
+  border-right:1px solid var(--inv-border,rgba(255,255,255,.22));
+
+  box-shadow:8px 0 28px rgba(0,0,0,.20);
+
+  backdrop-filter:blur(18px) saturate(135%);
+  -webkit-backdrop-filter:blur(18px) saturate(135%);
+
+  transition:
+    width .22s ease,
+    transform .22s ease;
+}
+
+/* Logo */
+.sidebar-brand{
+  min-height:62px;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:8px 9px 16px;
+  margin-bottom:10px;
+
+  border-bottom:1px solid var(--inv-border,rgba(255,255,255,.18));
+}
+
+.sidebar-brand-icon{
+  width:38px;
+  min-width:38px;
+  height:38px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:1.55rem;
+
+  background:rgba(255,255,255,.10);
+  border:1px solid var(--inv-border,rgba(255,255,255,.22));
+  border-radius:12px;
+}
+
+.sidebar-brand-text{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+
+  color:var(--inv-text,var(--text,#fff));
+  line-height:1.05;
+}
+
+.sidebar-brand-text strong{
+  font-size:1rem;
+}
+
+.sidebar-brand-text span{
+  margin-top:3px;
+  color:var(--inv-muted,var(--muted,#bbb));
+  font-size:.82rem;
+}
+
+/* Navigazione */
+.sidebar-nav{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex:1;
+}
+
+.sidebar-item,
+.sidebar-collapse{
+  width:100%;
+  min-height:46px;
+
+  display:flex;
+  align-items:center;
+  gap:11px;
+
+  padding:8px 11px;
+
+  background:transparent !important;
+  color:var(--inv-text,var(--text,#fff)) !important;
+
+  border:1px solid transparent !important;
+  border-radius:11px;
+
+  text-align:left;
+  font-weight:650;
+
+  transition:
+    background .16s ease,
+    border-color .16s ease,
+    transform .16s ease;
+}
+
+.sidebar-item:hover,
+.sidebar-collapse:hover{
+  background:rgba(255,255,255,.10) !important;
+  border-color:var(--inv-border,rgba(255,255,255,.20)) !important;
+}
+
+.sidebar-item.active{
+  background:rgba(120,189,255,.17) !important;
+  border-color:rgba(120,189,255,.58) !important;
+
+  box-shadow:
+    inset 3px 0 0 rgba(120,189,255,.95),
+    0 4px 14px rgba(0,0,0,.12);
+}
+
+.sidebar-icon{
+  width:28px;
+  min-width:28px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:1.18rem;
+}
+
+.sidebar-label{
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.sidebar-collapse{
+  margin-top:12px;
+  border-top:1px solid var(--inv-border,rgba(255,255,255,.18)) !important;
+  border-radius:0;
+  padding-top:13px;
+}
+
+.sidebar-collapse-icon{
+  width:28px;
+  min-width:28px;
+  text-align:center;
+}
+
+/* Desktop compresso */
+body.sidebar-collapsed .app-sidebar{
+  width:var(--inv-sidebar-collapsed);
+}
+
+body.sidebar-collapsed .app-shell{
+  margin-left:var(--inv-sidebar-collapsed);
+}
+
+body.sidebar-collapsed .sidebar-brand{
+  justify-content:center;
+  padding-left:0;
+  padding-right:0;
+}
+
+body.sidebar-collapsed .sidebar-brand-text,
+body.sidebar-collapsed .sidebar-label{
+  display:none;
+}
+
+body.sidebar-collapsed .sidebar-item,
+body.sidebar-collapsed .sidebar-collapse{
+  justify-content:center;
+  padding-left:5px;
+  padding-right:5px;
+}
+
+body.sidebar-collapsed .sidebar-collapse-icon{
+  transform:rotate(180deg);
+}
+
+/* Pulsante hamburger: nascosto su desktop */
+.mobile-menu-btn{
+  display:none;
+}
+
+.sidebar-overlay{
+  display:none;
+}
+
+/* Migliore utilizzo dello spazio con sidebar */
+.app-shell .wrap{
+  max-width:1400px;
+}
+
+/* =========================================================
+   MOBILE / TABLET
+   ========================================================= */
+
+@media(max-width:900px){
+
+  .app-shell,
+  body.sidebar-collapsed .app-shell{
+    margin-left:0;
+  }
+
+  .app-sidebar,
+  body.sidebar-collapsed .app-sidebar{
+    width:min(82vw,290px);
+    transform:translateX(-105%);
+  }
+
+  body.sidebar-mobile-open .app-sidebar{
+    transform:translateX(0);
+  }
+
+  body.sidebar-collapsed .sidebar-brand-text,
+  body.sidebar-collapsed .sidebar-label{
+    display:block;
+  }
+
+  body.sidebar-collapsed .sidebar-brand{
+    justify-content:flex-start;
+    padding-left:9px;
+    padding-right:9px;
+  }
+
+  body.sidebar-collapsed .sidebar-item,
+  body.sidebar-collapsed .sidebar-collapse{
+    justify-content:flex-start;
+    padding-left:11px;
+    padding-right:11px;
+  }
+
+  body.sidebar-collapsed .sidebar-collapse-icon{
+    transform:none;
+  }
+
+  .sidebar-collapse{
+    display:none;
+  }
+
+  .mobile-menu-btn{
+    position:fixed;
+    display:flex;
+
+    top:10px;
+    left:10px;
+    z-index:950;
+
+    width:42px;
+    height:42px;
+    padding:0;
+
+    align-items:center;
+    justify-content:center;
+
+    background:rgba(12,17,24,.78) !important;
+    color:var(--inv-text,var(--text,#fff)) !important;
+
+    border:1px solid var(--inv-border,rgba(255,255,255,.28)) !important;
+    border-radius:11px;
+
+    box-shadow:0 5px 18px rgba(0,0,0,.20);
+
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+
+    font-size:1.25rem;
+  }
+
+  body.sidebar-mobile-open .sidebar-overlay{
+    display:block;
+
+    position:fixed;
+    inset:0;
+    z-index:990;
+
+    background:rgba(0,0,0,.48);
+
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
+  }
+
+  body.sidebar-mobile-open{
+    overflow:hidden;
+  }
+
+  /* Lascia spazio all'hamburger */
+  .app-shell header > div:first-child{
+    padding-left:48px;
+  }
+}
+
+@media(max-width:640px){
+
+  .mobile-menu-btn{
+    top:8px;
+    left:8px;
+    width:40px;
+    height:40px;
+  }
+
+  .app-shell header > div:first-child{
+    padding-left:46px;
+  }
+
+  .app-sidebar{
+    padding-top:max(12px,env(safe-area-inset-top));
+  }
+}
+
+
+/* =========================================================
+   INVENTARIO CASA - SIDEBAR v2 / VISTE
+   ========================================================= */
+
+.sidebar-layout{
+  display:block !important;
+}
+
+.app-view{
+  display:none;
+  width:100%;
+  min-width:0;
+}
+
+.app-view.active{
+  display:block;
+}
+
+#inventoryView,
+#typesView{
+  width:100%;
+}
+
+.view-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+
+  margin-bottom:14px;
+  padding:14px 16px;
+
+  background:var(--inv-card,rgba(255,255,255,.12));
+  border:1px solid var(--inv-border,rgba(255,255,255,.24));
+  border-radius:14px;
+
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+
+  backdrop-filter:blur(12px) saturate(125%);
+  -webkit-backdrop-filter:blur(12px) saturate(125%);
+}
+
+.view-title h2{
+  margin:0 0 4px;
+}
+
+.types-view-add{
+  flex:0 0 auto;
+}
+
+.types-page-panel{
+  width:100%;
+  max-width:none;
+}
+
+/* Nella pagina dedicata non servono i vecchi controlli duplicati */
+#typesView .types-add-top,
+#typesView #typeCollapseBtn{
+  display:none !important;
+}
+
+#typesView .type-panel-body{
+  display:block !important;
+}
+
+#typesView .type-panel-head{
+  margin-bottom:12px;
+}
+
+/* Sidebar desktop un po' più compatta */
+@media(min-width:901px){
+  :root{
+    --inv-sidebar-width:220px;
+    --inv-sidebar-collapsed:68px;
+  }
+
+  .app-sidebar{
+    padding-left:9px;
+    padding-right:9px;
+  }
+}
+
+@media(max-width:640px){
+  .view-title{
+    align-items:flex-start;
+    padding:12px;
+  }
+
+  .view-title .sub{
+    font-size:.8rem;
+  }
+
+  .types-view-add{
+    padding:8px 10px;
+  }
+}
+
+
+#typesView #typePanel{
+  width:100%;
+  max-width:none;
+}
+
+/* Sidebar v2 - evita il secondo pulsante Nuova tipologia */
+#typesView .type-add{
+  display:none !important;
+}
+
+/* =========================================================
+   Sidebar v2 - Home pulita
+   Nuovo elemento compare solo quando richiesto dal menu
+   ========================================================= */
+
+body:not(.show-new-item) #newItemPanel{
+  display:none !important;
+}
+
+body.show-new-item #newItemPanel{
+  display:block !important;
+}
+
+
+/* =========================================================
+   Sidebar v2 - pagina Backup & Restore
+   ========================================================= */
+
+#backupView .backup-info{
+  margin-bottom:18px;
+}
+
+#backupView .backup-create-btn{
+  width:100%;
+  max-width:520px;
+  margin-bottom:24px;
+}
+
+#backupView .backup-list{
+  width:100%;
+  max-height:none;
+}
+
+@media (max-width: 760px){
+  #backupView .backup-create-btn{
+    max-width:none;
+  }
+}
+
+/* =========================================================
+   Backup page v2 - layout compatto desktop
+   ========================================================= */
+
+@media (min-width: 761px){
+
+  #backupView .backup-create-btn{
+    width:auto !important;
+    min-width:360px;
+    max-width:460px;
+  }
+
+  #backupView .backup-row{
+    position:relative;
+    padding-right:300px;
+    min-height:86px;
+  }
+
+  #backupView .backup-row-actions{
+    position:absolute;
+    right:14px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    gap:8px;
+    width:auto;
+  }
+
+  #backupView .backup-row-actions a,
+  #backupView .backup-row-actions button{
+    width:auto !important;
+    min-width:125px;
+    padding:9px 14px !important;
+  }
+}
+
+/* Mobile: azioni grandi e facilmente premibili */
+@media (max-width: 760px){
+
+  #backupView .backup-row{
+    padding-right:14px;
+  }
+
+  #backupView .backup-row-actions{
+    position:static;
+    transform:none;
+    width:100%;
+    margin-top:12px;
+  }
+
+  #backupView .backup-row-actions a,
+  #backupView .backup-row-actions button{
+    flex:1;
+  }
+}
+
+
+/* =========================================================
+   Sidebar v2 - Nuovo elemento come pagina
+   ========================================================= */
+
+#newItemView{
+  width:100%;
+}
+
+#newItemView #newItemPanel{
+  display:block !important;
+  margin-top:16px;
+}
+
+#newItemView #newItemPanel .new-item-head{
+  display:none !important;
+}
+
+#newItemView #newItemPanel .new-item-body{
+  display:block !important;
+}
+
+/* La vecchia modalità show-new-item non è più necessaria */
+#newItemView #newItemPanel.collapsed .new-item-body{
+  display:block !important;
+}
+
+
+/* =========================================================
+   IMPOSTAZIONI
+   ========================================================= */
+
+.settings-page-panel{
+  width:100%;
+  max-width:none;
+}
+
+.settings-section{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+}
+
+.settings-section-info h3{
+  margin:0 0 6px;
+}
+
+.settings-control{
+  flex:0 0 auto;
+}
+
+.settings-control .language-select{
+  min-width:140px;
+}
+
+@media (max-width:760px){
+  .settings-section{
+    align-items:stretch;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .settings-control .language-select{
+    width:100%;
+  }
+}
+
+/* =========================================================
+   HEADER - allineamento campo ricerca e pulsante lente
+   ========================================================= */
+
+.search{
+  align-items:stretch;
+}
+
+.search-input-wrap{
+  height:46px;
+}
+
+.search-input-wrap > input{
+  height:46px !important;
+  box-sizing:border-box;
+}
+
+.search > button.secondary{
+  height:46px !important;
+  min-height:46px !important;
+  width:52px;
+  min-width:52px;
+  padding:0 !important;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
