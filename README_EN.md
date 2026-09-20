@@ -1,157 +1,253 @@
-# Inventario Casa v2.5.0
+# 🏠 Inventario Casa v2.5.2
 
 🇮🇹 [Italiano](README.md) | 🇬🇧 **English**
 
-Inventario Casa is a Home Assistant App designed to manage a personal home inventory.
+**Inventario Casa** is a Home Assistant App designed to catalog what you own and quickly find **what you have and where it is located**.
 
-It allows you to catalog objects, books, comics and other belongings, organizing them by type, room and location, with photos and customizable fields.
+It is suitable both for everyday household objects and for collections such as books, comics, magazines, video games, VHS tapes and other custom categories.
 
-> **Language:** The current Inventario Casa user interface is available in Italian. English localization may be added in a future release.
+## 📦 Main features
 
-## Installation
+### Item cataloging
 
-Inventario Casa can be installed through the Home Assistant App Store.
+For each item you can store the main information, location, specific details, notes and photographs.
 
-1. Open **Home Assistant**.
-2. Go to **Settings → Apps → App Store**.
-3. Open the **⋮ → Repositories** menu.
-4. Add the repository: `https://github.com/gimalugi/inventario-casa`.
-5. Return to the App Store.
-6. Select **Inventario Casa**.
-7. Click **Install**.
-8. When installation is complete, start the App.
+### 📍 Detailed location
 
-There is no need to manually copy files into the `/addons` directory.
+Items can be located using:
 
-## Updating
+- Room
+- Furniture or shelf
+- Shelf level or drawer
+- Container
+- Container code
 
-When a new version is published, Home Assistant can notify you that an update is available from the App page.
+### 🏷️ Customizable types
 
-Updates are performed directly through Home Assistant without manually replacing the App files.
+The inventory uses a single global database, while items can belong to different types.
 
-Do not delete the App data when updating.
+Predefined types are available and you can freely create new types for any kind of collection.
 
-## Main Features
+### 🧩 Custom fields
 
-- Home inventory management.
-- Customizable item types.
-- Custom fields for each item type.
-- Organization by room and location.
-- Object photos.
-- Global database search.
-- Grouping by item type or room.
-- Collapsible groups.
-- Progressive loading for large inventories.
-- Responsive interface optimized for smartphones.
-- Dynamic integration with Home Assistant themes.
-- Voice dictation for compatible text fields.
-- ISBN/EAN support for books and comics.
-- Google Books lookup with Open Library fallback.
-- Barcode scanning using the device camera over HTTPS.
+Each type can have its own fields:
 
-## Books and Comics
+- Text
+- Number
+- Date
+- Long text
+- Select list
+- Checkbox
 
-Books and comics can use ISBN/EAN codes.
+Fields can be required or optional, reordered and enabled/disabled.
 
-Available features include:
+### 🔎 Global search
 
-- manual ISBN/EAN entry;
-- on-demand metadata lookup;
-- Google Books as the primary metadata source;
-- automatic fallback to Open Library;
-- preview before applying retrieved information;
-- automatic completion of empty fields only;
-- ISBN/EAN barcode scanning using the camera.
+Search can find items using both the main information and custom fields.
 
-Manual ISBN/EAN entry always remains available.
+The **×** button clears the search text and immediately restores the complete inventory.
 
-## Camera and HTTPS
+### 🗂️ Groups and subgroups
 
-Starting with version 2.3.5, features requiring camera access are enabled only when the browser is running in a secure HTTPS context.
+Items can be displayed grouped by type and, when configured, further divided into subgroups.
 
-With HTTPS:
+For example:
 
-- live barcode scanning is used when supported by the browser;
-- if live scanning is unavailable, photo-based scanning can be used as a fallback.
+**Comics → Series → items**
 
-With HTTP:
+Pagination keeps the interface responsive even with large inventories.
 
-- the barcode scan button remains visible but is disabled;
-- the camera is not activated;
-- ISBN/EAN codes can still be entered manually;
-- metadata lookup remains available.
+### 🔢 Natural numeric sorting
 
-No camera scanning is performed in the background.
+Collections using a **Number** field are sorted numerically, avoiding alphabetical orders such as `1, 10, 11, 2`.
 
-## Home Assistant Themes
+A **Number suffix** is also supported.
 
-Inventario Casa dynamically uses colors from the active Home Assistant theme.
+### 📷 Photographs
 
-The interface adapts elements including:
+Each item can have multiple photographs.
 
-- backgrounds;
-- cards and panels;
-- primary and secondary text;
-- input fields;
-- menus;
-- placeholders;
-- borders and separators.
+Images are automatically processed and optimized and can be opened using the enlarged image viewer.
 
-Both light and dark Home Assistant themes are supported.
+### 📚 ISBN and barcodes
 
-## Large Inventories
+For books and other compatible items, ISBN and barcode information can be used.
 
-Inventario Casa is designed to handle large collections efficiently.
+Camera scanning is available when the browser and connection support it. Manual entry is always available.
 
-Features include:
+### 🎙️ Voice dictation
 
-- item counts calculated directly from SQLite;
-- progressive loading;
-- up to 50 items loaded per request;
-- **Load more** functionality;
-- global search including custom fields;
-- groups initially collapsed to avoid unnecessary loading;
-- individual item retrieval directly from the database.
+Compatible browsers can provide voice dictation for text fields.
 
-## Data Persistence
+## 🧭 Interface
 
-App data is stored separately from the application code:
+Starting with version **2.5.2**, the interface includes a new navigation sidebar with dedicated sections for:
 
-- Database: `/data/inventario_casa/inventario.db`
-- Photos: `/media/inventario_casa/oggetti`
+- Inventory
+- New item
+- Types
+- Backup
+- Settings
 
-Updates preserve the database, photos, inventory items and existing custom fields.
+Language selection is available in the **Settings** page.
 
-## Version 2.3.5
+The interface is responsive and adapts to desktop, tablet and smartphone screens.
 
-Main changes:
+## 🎨 Home Assistant integration
 
-- camera-based ISBN/EAN scanning is available only over HTTPS;
-- barcode scanning is disabled on insecure HTTP connections;
-- manual ISBN/EAN entry and metadata lookup remain available;
-- live camera scanning is used when supported;
-- photo-based fallback remains available in secure contexts;
-- improved native dropdown readability on Windows/Chrome;
-- improved Home Assistant light and dark theme integration;
-- no database or schema changes.
+When Inventario Casa is opened through **Ingress**, the interface dynamically uses the colors and background of the currently selected Home Assistant theme.
 
-## Data Safety
+If theme information is unavailable, Inventario Casa automatically uses its default graphical theme.
 
-Inventario Casa updates are designed to preserve:
+Theme synchronization only takes place when necessary: the App does not use polling or periodic theme monitoring.
 
-- the database;
-- photos;
-- item types;
-- custom fields;
-- inventory items.
+## 💾 Data storage
 
-A recent Home Assistant backup is recommended before major structural changes.
+The inventory database is stored at:
 
-## Version 2.3.6
+`/data/inventario_casa/inventario.db`
 
-- Fixed the default item types created on new installations.
-- New installations start with **Apparecchiature elettroniche**, **Libri** and **Oggetti**.
-- The **Libri** type includes Author, ISBN, Publisher and Year fields.
-- Default types and fields are created only during the first initialization.
-- Types deleted by the user are no longer recreated after restarting the App.
-- No automatic changes are made to existing item types or inventory data.
+Photographs are stored separately at:
+
+`/media/inventario_casa/oggetti/`
+
+Database backups are stored at:
+
+`/media/inventario_casa/db_backups/`
+
+This separation keeps photographs and backups outside the App's internal data and allows them to be backed up separately.
+
+## 💾 Backup & Recovery
+
+Since version 2.3.0, Inventario Casa provides database backup management directly from the interface.
+
+You can:
+
+- create manual backups;
+- check date, size and integrity;
+- download backups;
+- restore a backup;
+- automatically create a copy of the current database before a restore.
+
+The selected backup is checked using `PRAGMA integrity_check` before the restore, and the resulting database is checked again afterwards.
+
+### Recovery Mode
+
+If database initialization or a migration prevents normal startup, the App's web server remains available in Recovery Mode.
+
+The Recovery screen allows available backups to be viewed, downloaded and restored without using Docker, SQLite or the Home Assistant CLI.
+
+## 🔐 Database security and migrations
+
+The SQLite schema version is stored in the technical `app_meta` table.
+
+When an update requires a new schema version, a consistent SQLite backup is automatically created before the migration.
+
+The backup is checked using `PRAGMA integrity_check`. If the check does not return `ok`, the migration is stopped.
+
+When the schema is already up to date, a normal App restart does not create additional backups.
+
+## ⚙️ How it works
+
+Inventario Casa is a passive App.
+
+It does not use:
+
+- schedulers;
+- cron;
+- continuous scans;
+- periodic polling;
+- background monitoring processes.
+
+Operations are performed when requested by the user.
+
+## 📋 Version history
+
+### 2.5.2 — Sidebar and Settings
+
+- New navigation sidebar.
+- Dedicated views for Inventory, New item, Types and Backup.
+- New Settings page.
+- Language selection moved to Settings.
+- Updated Italian/English translations.
+- Improved responsive layout.
+- Search field and search button aligned.
+- No database schema changes.
+
+### 2.5.0 — Architectural reorganization
+
+- Reorganized the internal application architecture.
+- Frontend, CSS and JavaScript separated.
+- APIs split into dedicated modules.
+- Database, migrations and Backup & Restore management separated.
+- Backup retention configuration added.
+- Multilingual management consolidated.
+- Frontend asset caching improved.
+- Recovery page separated from the main backend.
+- Restore procedure issues corrected.
+- Compatibility with existing database, schema and data maintained.
+
+### 2.4.x — Multilingual interface
+
+- Full Italian/English interface support.
+- Manual language selector with saved preference.
+- Automatic Home Assistant language detection.
+- Localization of inventory, types, search, groups, pagination and Backup & Restore.
+- Recovery interface available in Italian and English.
+- Improved photograph and thumbnail management.
+- Improved asynchronous loading of groups and subgroups.
+
+### 2.3.x — Backup, Recovery and camera
+
+- Complete SQLite backup management.
+- Manual backups, downloads and guided restore.
+- Integrity checks before and after restore.
+- Automatic backup before restore.
+- Recovery Mode.
+- Backup interface improvements.
+- Improved camera compatibility with HTTPS.
+- Photograph fallback retained.
+- Improved Home Assistant theme integration.
+- Default types are created only during the first database initialization.
+
+### 2.2.x — Home Assistant theme and migrations
+
+- Dynamic Home Assistant theme through Ingress.
+- Fallback to the default graphical theme.
+- Internal SQLite schema version.
+- Technical `app_meta` table.
+- Automatic backups before schema migrations.
+- `PRAGMA integrity_check` validation.
+- Mobile interface improvements.
+- Improved dialogs and search controls.
+
+### 2.1.x — Collections and large inventories
+
+- Configurable subgroups for types.
+- Real pagination for groups and subgroups.
+- Optimization for very large collections.
+- Natural numeric sorting.
+- Number suffix support.
+- Item previews with photographs.
+- Compact read-only item details dialog.
+
+### 2.0.0
+
+Foundation of the 2.x generation of the application.
+
+### 0.1.x
+
+The initial versions progressively introduced cataloging, types, locations, photographs, search, custom fields and ISBN/barcode scanning.
+
+The complete detailed history is available in the [CHANGELOG](inventario_casa/CHANGELOG.md).
+
+## 📚 Documentation
+
+- [Complete documentation](inventario_casa/DOCS.md)
+- [CHANGELOG](inventario_casa/CHANGELOG.md)
+- [Regression checklist](inventario_casa/REGRESSION_CHECKLIST.md)
+- [GitHub Releases](https://github.com/gimalugi/inventario-casa/releases)
+
+---
+
+**Inventario Casa** — your home inventory directly in Home Assistant.

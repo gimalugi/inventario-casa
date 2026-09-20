@@ -1,163 +1,259 @@
-# Inventario Casa v2.5.0
+# 🏠 Inventario Casa v2.5.2
 
 🇮🇹 **Italiano** | 🇬🇧 [English](README_EN.md)
 
-Inventario Casa è un'App per Home Assistant dedicata alla gestione dell'inventario domestico.
+**Inventario Casa** è un'App per Home Assistant pensata per catalogare ciò che possiedi e sapere rapidamente **che cosa hai e dove si trova**.
 
-Permette di catalogare oggetti, libri, fumetti e altri beni, organizzandoli per tipologia, ambiente e posizione, con fotografie e campi personalizzati.
+È adatta sia agli oggetti di uso quotidiano sia a collezioni come libri, fumetti, riviste, videogiochi, videocassette e altre categorie personalizzate.
 
-## Installazione
+## 📦 Funzioni principali
 
-Inventario Casa si installa tramite lo Store delle App di Home Assistant.
+### Catalogazione degli oggetti
 
-1. Aprire **Home Assistant**.
-2. Andare in **Impostazioni → App → Store delle App**.
-3. Aprire il menu **⋮ → Repository**.
-4. Aggiungere il repository: `https://github.com/gimalugi/inventario-casa`.
-5. Tornare allo Store delle App.
-6. Selezionare **Inventario Casa**.
-7. Premere **Installa**.
-8. Al termine dell'installazione, avviare l'App.
+Per ogni elemento puoi memorizzare le informazioni principali, la posizione, eventuali dettagli specifici, note e fotografie.
 
-Non è necessario copiare manualmente file nella cartella `/addons`.
+### 📍 Posizione dettagliata
 
-## Aggiornamento
+Gli oggetti possono essere localizzati indicando:
 
-Quando viene pubblicata una nuova versione, Home Assistant può segnalarne la disponibilità direttamente dalla pagina dell'App.
+- Ambiente
+- Mobile o scaffale
+- Ripiano o cassetto
+- Contenitore
+- Codice del contenitore
 
-L'aggiornamento viene eseguito tramite Home Assistant, senza sostituire manualmente i file dell'App.
+### 🏷️ Tipologie personalizzabili
 
-Non cancellare i dati dell'App durante l'aggiornamento.
+L'inventario utilizza un unico archivio globale, ma gli elementi possono appartenere a tipologie differenti.
 
-## Persistenza
+Sono disponibili tipologie predefinite ed è possibile crearne liberamente di nuove.
 
-I dati dell'App sono conservati separatamente dal codice:
+### 🧩 Campi personalizzati
 
-- Database: `/data/inventario_casa/inventario.db`
-- Foto: `/media/inventario_casa/oggetti`
+Ogni tipologia può avere campi propri:
 
-Gli aggiornamenti mantengono database, fotografie, elementi e campi già presenti.
+- Testo
+- Numero
+- Data
+- Testo esteso
+- Selezione da elenco
+- Casella di controllo
 
-Novità 0.1.7: ogni campo personalizzato può avere un testo di esempio facoltativo.
+I campi possono essere obbligatori o facoltativi, ordinati e attivati/disattivati.
 
-Novità 0.1.8: layout responsive smartphone completamente rivisto.
+### 🔎 Ricerca globale
 
-Novità 0.1.9: contrasto mobile migliorato e dettatura vocale nei campi testuali compatibili.
+La ricerca permette di trovare rapidamente gli elementi utilizzando sia i dati principali sia i campi personalizzati.
 
-Correzione 0.1.10: migrazione automatica del vecchio schema foto (`caption` -> `label`).
+Il pulsante **×** cancella il testo e ripristina immediatamente l'inventario completo.
 
-Novità 0.1.11: pannello Tipologie compatto, ricerca, riduzione/espansione ed eliminazione sicura.
+### 🗂️ Raggruppamenti e sottogruppi
 
-Novità 0.1.14: contrasto grafico più marcato su smartphone; sfondo e pannelli più chiari rispetto ai campi di inserimento.
+Gli elementi possono essere visualizzati raggruppati per tipologia e, quando configurato, ulteriormente suddivisi in sottogruppi.
 
-Novità 0.1.15: sfondo interno ispirato al tema Home Assistant ios-dark-mode-blue-red, con card più scure e campi ad alto contrasto.
+Ad esempio, i fumetti possono essere raggruppati per **Serie**.
 
-Novità 0.1.16: card più chiare e trasparenti, effetto vetro, mantenendo i campi di inserimento scuri per contrasto.
+La paginazione mantiene l'interfaccia veloce anche con inventari numerosi.
 
-Novità 0.1.17: pulsante Aggiungi tipologia spostato accanto al titolo Tipologie, sempre accessibile senza aprire o scorrere l'elenco.
+### 🔢 Ordinamento numerico naturale
 
-Novità 0.1.18: bordi colorati su pulsanti, tab, statistiche, azioni e tipologie, ispirati alla dashboard Home Assistant dell'utente.
+Le raccolte che utilizzano un campo **Numero** vengono ordinate numericamente in modo naturale, evitando ordinamenti come `1, 10, 11, 2`.
 
-Novità 0.1.19: nella scheda Dettagli vengono mostrati solo i titoli dei campi personalizzati; cliccando un titolo si apre il relativo campo. Un segno ✓ indica i campi già compilati.
+È supportato anche il campo **Suffisso numero**.
 
-Novità 0.1.20: su smartphone, quando si apre la tastiera, il campo attivo viene portato automaticamente al centro della zona visibile.
+### 📷 Fotografie
 
-Novità 0.1.21: Nuovo elemento è chiuso di default e si apre toccando il titolo; la dashboard mostra Cosa possiedo con limite selezionabile 20/50/100, applicato lato database.
+Ogni elemento può avere più fotografie.
 
-Novità 0.1.22: contorni colorati più luminosi e leggermente più spessi.
+Le immagini vengono elaborate e ottimizzate automaticamente e possono essere aperte tramite visualizzazione ingrandita.
 
-Novità 0.1.23: corretto il layout mobile dell'editor tipologie; il campo nome occupa tutta la riga e la barra Salva/Annulla/Elimina non copre più i campi sottostanti.
+### 📚 ISBN e codici a barre
 
-Novità 0.1.24 (Step 1 barcode): aggiunto il campo manuale ISBN / EAN alla tipologia Fumetto. Il Libro mantiene ISBN. Nessuna ricerca automatica o fotocamera ancora: l'inserimento manuale resta sempre disponibile.
+Per libri e altri elementi compatibili è possibile utilizzare ISBN o codici a barre.
 
-Novità 0.1.25 (Step 2 ISBN): pulsante Cerca dati su ISBN/ISBN-EAN per Libro e Fumetto. Ricerca solo su richiesta tramite Open Library, anteprima con conferma e compilazione esclusivamente dei campi vuoti. Inserimento manuale sempre disponibile.
+La lettura può utilizzare la fotocamera quando il browser e la connessione lo consentono; l'inserimento manuale rimane sempre disponibile.
 
-Novità 0.1.26 (Step 3 barcode): scansione ISBN/EAN on-demand dalla fotocamera mobile o da una foto. Il codice rilevato viene inserito nel campo; la ricerca dati resta separata e volontaria. Inserimento manuale sempre disponibile.
+### 🎙️ Dettatura vocale
 
-Novità 0.1.27: Google Books è la fonte primaria per ISBN, con fallback automatico su Open Library. Inserimento manuale invariato.
+Nei browser compatibili è disponibile la dettatura vocale per velocizzare la compilazione dei campi testuali.
 
-Novità 0.1.28:
-- Scanner mobile compatibile anche quando BarcodeDetector non è disponibile.
-- Fallback locale: i fotogrammi vengono analizzati dall'App tramite pyzbar/zbar solo mentre la schermata scanner è aperta.
-- Anche “Usa una foto” utilizza il fallback locale.
-- Inserimento manuale sempre disponibile.
-- Nessun servizio o scansione in background.
+## 🧭 Interfaccia
 
-Novità 0.1.29:
-- Il pulsante Scansiona codice sceglie automaticamente il metodo disponibile.
-- In HTTPS prova la scansione live.
-- In accesso locale HTTP apre direttamente la fotocamera di sistema per scattare una foto del barcode.
-- La foto viene analizzata dall'add-on e il codice rilevato viene riportato nel campo ISBN/EAN.
-- Inserimento manuale sempre disponibile; nessun processo in background.
+Dalla versione **2.5.2** è disponibile una nuova sidebar di navigazione con sezioni dedicate a:
 
-Novità 0.1.30:
-- Elenco elementi molto più compatto: una riga cliccabile con icona, titolo e freccia.
-- Rimossi dalla lista principale posizione, descrizione e pulsanti Foto/Modifica/Elimina.
-- Toccando un elemento si apre la sua scheda completa.
-- Nella scheda restano le sezioni Generale, Dettagli, Posizione, Foto e Note.
-- Il comando Elimina è stato spostato nella scheda elemento.
+- Inventario
+- Nuovo elemento
+- Tipologie
+- Backup
+- Impostazioni
 
-Novità 0.1.31:
-- Raggruppamento elenco per Tipologia, Ambiente oppure Nessuno.
-- Raggruppamento predefinito: Tipologia.
-- Gruppi richiudibili con conteggio elementi.
-- Stato aperto/chiuso dei gruppi memorizzato nel browser.
-- La ricerca mostra solo i gruppi che contengono risultati.
+La selezione della lingua è disponibile nella pagina **Impostazioni**.
 
-Novità 0.1.32:
-- Intestazione "Cosa possiedo" ottimizzata per smartphone.
-- Titolo su una riga separata.
-- Controlli Raggruppa e Mostra compatti e affiancati sotto il titolo.
-- Migliorata la leggibilità dei gruppi con nomi lunghi.
+L'interfaccia è responsive e si adatta a desktop, tablet e smartphone.
 
-Novità 0.1.33:
-- Bordi più evidenti su tutte le sezioni principali.
-- Campi input, select e textarea più riconoscibili.
-- Gruppi dell'inventario racchiusi in riquadri più marcati.
-- Tipologie con bordi più forti e colori distintivi.
-- Elementi dell'elenco meglio separati tra loro.
-- Focus dei campi più evidente su mobile.
+## 🎨 Integrazione con Home Assistant
 
+Quando Inventario Casa viene aperto tramite **Ingress**, l'interfaccia utilizza dinamicamente i colori e lo sfondo del tema Home Assistant attualmente selezionato.
 
-Inventario Casa 2.1.0 - gestione grandi archivi:
-- gruppi richiudibili per Tipologia o Ambiente;
-- conteggio reale di tutti gli elementi del gruppo direttamente da SQLite;
-- caricamento progressivo: massimo 50 elementi per richiesta;
-- pulsante Carica altri per recuperare i successivi 50;
-- ricerca globale su tutto il database, compresi i campi personalizzati;
-- i gruppi nuovi partono chiusi per evitare caricamenti inutili;
-- la scheda di un elemento può essere recuperata singolarmente dal database;
-- nessuna modifica distruttiva al database, alle foto o alle tipologie esistenti.
+Se le informazioni del tema non sono disponibili, viene utilizzata automaticamente la grafica predefinita di Inventario Casa.
 
-## Inventario Casa 2.3.4 - integrazione temi Home Assistant
+La sincronizzazione del tema avviene solo quando necessario: l'app non utilizza polling o attività periodiche per il tema.
 
-- Colori dei testi adattati dinamicamente al tema Home Assistant.
-- Supporto migliorato per temi chiari e scuri.
-- Campi di inserimento, menu, textarea e placeholder adattati al tema attivo.
-- Migliore contrasto e separazione visiva di card e pannelli.
-- Migliorata la leggibilità della schermata principale con temi chiari.
-- Migliorata la visualizzazione del riquadro informativo della sezione Foto.
-- Mantenuti i colori semantici per successo, errore, pericolo e accenti.
-- Corretto il caricamento del layer grafico tramite WSGI.
-- Nessuna modifica al database o al relativo schema.
+## 💾 Dove vengono salvati i dati
 
-## Inventario Casa 2.3.5 - gestione sicura della fotocamera
+Il database dell'inventario è memorizzato in:
 
-- La scansione ISBN/EAN tramite fotocamera è disponibile solo in connessioni sicure HTTPS.
-- In connessioni HTTP il pulsante di scansione rimane visibile ma viene disabilitato.
-- Inserimento manuale di ISBN/EAN e ricerca dati rimangono sempre disponibili.
-- In HTTPS viene utilizzata la scansione live quando supportata dal browser.
-- Se la scansione live non è disponibile, rimane disponibile il fallback tramite foto.
-- Aggiunta una protezione anche al fallback fotografico per impedire l'accesso alla fotocamera in contesti non sicuri.
-- Aggiornati i messaggi della finestra di scansione per distinguere correttamente il comportamento HTTP/HTTPS.
-- Migliorata la leggibilità delle opzioni dei menu a tendina nativi su Windows/Chrome.
-- Nessuna modifica al database o al relativo schema.
+`/data/inventario_casa/inventario.db`
 
-## Inventario Casa 2.3.6 - gestione tipologie predefinite
+Le fotografie sono memorizzate separatamente in:
 
-- Corrette le tipologie predefinite create nelle nuove installazioni.
-- Le nuove installazioni partono con **Apparecchiature elettroniche**, **Libri** e **Oggetti**.
-- La tipologia **Libri** include i campi Autore, ISBN, Editore e Anno.
-- Le tipologie e i campi predefiniti vengono creati solo alla prima inizializzazione.
-- Le tipologie eliminate dall'utente non vengono più ricreate al riavvio.
-- Nessuna modifica automatica alle tipologie o ai dati delle installazioni esistenti.
+`/media/inventario_casa/oggetti/`
+
+I backup del database sono memorizzati in:
+
+`/media/inventario_casa/db_backups/`
+
+La separazione consente di mantenere le fotografie e i backup fuori dai dati interni dell'app e di gestirne il backup separatamente.
+
+## 🔄 Aggiornamenti
+
+Gli aggiornamenti dell'app sono progettati per conservare il database e gli elementi già catalogati.
+
+Non è necessario cancellare i dati dell'app durante un normale aggiornamento.
+
+Prima di operazioni straordinarie o migrazioni è comunque consigliato conservare una copia di sicurezza del database.
+
+## 💾 Backup & Recovery
+
+Dalla versione 2.3.0 Inventario Casa dispone di una gestione dei backup direttamente dall'interfaccia.
+
+È possibile:
+
+- creare manualmente un backup;
+- controllarne data, dimensione e integrità;
+- scaricarlo;
+- ripristinarlo;
+- creare automaticamente una copia del database corrente prima del restore.
+
+Il backup selezionato viene verificato con `PRAGMA integrity_check` prima del restore e anche il database risultante viene verificato dopo il ripristino.
+
+### Modalità Recovery
+
+Se l'inizializzazione del database o una migrazione impediscono il normale avvio, il server web dell'app rimane disponibile in modalità Recovery.
+
+La schermata Recovery permette di vedere, scaricare e ripristinare i backup disponibili senza usare Docker, SQLite o la CLI di Home Assistant.
+
+## 🔐 Sicurezza database e migrazioni
+
+La versione dello schema SQLite viene registrata nella tabella tecnica `app_meta`.
+
+Quando un aggiornamento richiede una nuova versione dello schema, prima della migrazione viene creato automaticamente un backup SQLite consistente.
+
+Il backup viene controllato con `PRAGMA integrity_check`. Se il controllo non restituisce `ok`, la migrazione viene interrotta.
+
+Quando lo schema è già aggiornato, un normale riavvio dell'app non crea nuovi backup.
+
+## ⚙️ Funzionamento
+
+Inventario Casa è un'app passiva.
+
+Non utilizza:
+
+- scheduler;
+- cron;
+- scansioni continue;
+- polling periodico;
+- processi di monitoraggio in background.
+
+Le operazioni vengono eseguite quando richieste dall'utente.
+
+## 📋 Cronologia delle versioni
+
+### 2.5.2 — Sidebar e Impostazioni
+
+- Nuova sidebar di navigazione.
+- Viste dedicate per Inventario, Nuovo elemento, Tipologie e Backup.
+- Nuova pagina Impostazioni.
+- Selezione della lingua spostata nelle Impostazioni.
+- Aggiornate le traduzioni Italiano/Inglese.
+- Migliorato il layout responsive.
+- Allineati campo di ricerca e pulsante lente.
+- Nessuna modifica allo schema del database.
+
+### 2.5.0 — Riorganizzazione architetturale
+
+- Riorganizzata l'architettura interna dell'applicazione.
+- Separati frontend, CSS e JavaScript.
+- Suddivise le API in moduli dedicati.
+- Separata la gestione del database, delle migrazioni e di Backup & Restore.
+- Aggiunta la configurazione della retention dei backup.
+- Consolidata la gestione multilingua.
+- Migliorata la gestione della cache degli asset frontend.
+- Separata la pagina Recovery.
+- Corretti problemi nella procedura di ripristino.
+- Mantenuta la compatibilità con database, schema e dati esistenti.
+
+### 2.4.x — Multilingua e interfaccia
+
+- Supporto completo Italiano/Inglese.
+- Selettore manuale della lingua con memorizzazione della preferenza.
+- Rilevamento automatico della lingua di Home Assistant.
+- Localizzazione di inventario, tipologie, ricerca, gruppi, paginazione e Backup & Restore.
+- Recovery disponibile in Italiano e Inglese.
+- Miglioramenti alla gestione delle fotografie e delle miniature.
+- Miglioramenti al caricamento asincrono di gruppi e sottogruppi.
+
+### 2.3.x — Backup, Recovery e fotocamera
+
+- Introdotta la gestione completa dei backup SQLite.
+- Backup manuali, download e ripristino guidato.
+- Verifica dell'integrità prima e dopo il ripristino.
+- Backup automatico prima del restore.
+- Modalità Recovery.
+- Miglioramenti grafici della pagina Backup.
+- Migliorata la compatibilità della fotocamera con HTTPS.
+- Mantenuto il fallback tramite acquisizione fotografica.
+- Migliorata l'integrazione grafica con il tema Home Assistant.
+- Le tipologie predefinite vengono create solo alla prima inizializzazione del database.
+
+### 2.2.x — Tema Home Assistant e migrazioni
+
+- Tema grafico collegato dinamicamente ai colori di Home Assistant tramite Ingress.
+- Fallback alla grafica predefinita.
+- Versione interna dello schema SQLite.
+- Tabella tecnica `app_meta`.
+- Backup automatico prima delle migrazioni.
+- Verifica tramite `PRAGMA integrity_check`.
+- Miglioramenti dell'interfaccia mobile.
+- Miglioramenti alla gestione delle finestre e della ricerca.
+
+### 2.1.x — Raccolte e grandi archivi
+
+- Sottogruppi configurabili per tipologia.
+- Paginazione reale per gruppi e sottogruppi.
+- Ottimizzazione per raccolte molto grandi.
+- Ordinamento numerico naturale.
+- Supporto al Suffisso numero.
+- Anteprime degli elementi con fotografie.
+- Modale compatta di sola lettura.
+
+### 2.0.0
+
+Base della generazione 2.x dell'applicazione.
+
+### 0.1.x
+
+Le versioni iniziali hanno introdotto progressivamente catalogazione, tipologie, posizioni, fotografie, ricerca, campi personalizzati e scansione ISBN/EAN.
+
+La cronologia completa e dettagliata è disponibile nel [CHANGELOG](inventario_casa/CHANGELOG.md).
+
+## 📚 Documentazione
+
+- [Documentazione completa](inventario_casa/DOCS.md)
+- [CHANGELOG](inventario_casa/CHANGELOG.md)
+- [Checklist di regressione](inventario_casa/REGRESSION_CHECKLIST.md)
+- [Release GitHub](https://github.com/gimalugi/inventario-casa/releases)
+
+---
+
+**Inventario Casa** — il tuo inventario domestico direttamente in Home Assistant.
