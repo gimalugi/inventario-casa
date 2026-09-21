@@ -22,6 +22,7 @@ COPY type_routes.py /app/type_routes.py
 COPY item_routes.py /app/item_routes.py
 COPY lookup_routes.py /app/lookup_routes.py
 COPY inventory_routes.py /app/inventory_routes.py
+COPY location_routes.py /app/location_routes.py
 COPY templates /app/templates
 COPY static /app/static
 COPY wsgi.py /app/wsgi.py

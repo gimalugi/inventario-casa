@@ -1,4 +1,4 @@
-# 🏠 Inventario Casa v2.5.2
+# 🏠 Inventario Casa v2.5.3
 
 🇮🇹 [Italiano](README.md) | 🇬🇧 **English**
 
@@ -162,6 +162,17 @@ It does not use:
 Operations are performed when requested by the user.
 
 ## 📋 Version history
+
+### 2.5.3 — Interface, search and pagination
+
+- New compact header optimized for desktop and mobile.
+- Improved global search and navigation between views.
+- Fixed search results being displayed under incorrect item types.
+- Configurable pagination in Settings: 10, 50 or 100 items.
+- Improved contextual Inventory statistics.
+- Fixed the "Property" field display in item details.
+- Improved responsive layout on smartphones.
+- No database schema changes.
 
 ### 2.5.2 — Sidebar and Settings
 

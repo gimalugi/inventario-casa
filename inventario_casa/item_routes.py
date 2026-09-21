@@ -10,6 +10,7 @@ def item_payload(data):
         max(1, int(data.get("quantity") or 1)),
         data.get("item_type_id") or None,
         (data.get("environment") or "").strip(),
+        data.get("environment_id") or None,
         (data.get("furniture") or "").strip(),
         (data.get("shelf") or "").strip(),
         (data.get("container_name") or "").strip(),
@@ -80,10 +81,10 @@ def create_item_blueprint(*, db, media_dir):
                 cur = conn.execute(
                     """INSERT INTO items(
                         name,description,quantity,item_type_id,
-                        environment,furniture,shelf,
+                        environment,environment_id,furniture,shelf,
                         container_name,container_code,tags,notes,
                         created_at,updated_at
-                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                     values + (now, now),
                 )
 
@@ -120,7 +121,7 @@ def create_item_blueprint(*, db, media_dir):
                 conn.execute(
                     """UPDATE items SET
                         name=?,description=?,quantity=?,item_type_id=?,
-                        environment=?,furniture=?,shelf=?,
+                        environment=?,environment_id=?,furniture=?,shelf=?,
                         container_name=?,container_code=?,tags=?,notes=?,
                         updated_at=?
                        WHERE id=?""",

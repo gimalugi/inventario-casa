@@ -2497,3 +2497,463 @@ body.show-new-item #newItemPanel{
   align-items:center;
   justify-content:center;
 }
+
+
+/* =========================================================
+   HEADER FISSO + RICERCA ESPANDIBILE
+   ========================================================= */
+
+.app-topbar{
+  position:sticky;
+  top:0;
+  z-index:100;
+  display:flex;
+  align-items:center;
+  flex-wrap:nowrap;
+  gap:12px;
+  min-height:64px;
+  margin-bottom:14px;
+  padding:8px 0;
+  background:var(--primary-background-color, #111);
+  border-bottom:1px solid var(--divider-color, rgba(255,255,255,.15));
+}
+
+.topbar-title{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.topbar-title h1{
+  margin:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.topbar-search{
+  display:none;
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.app-topbar.search-open .topbar-title{
+  display:none;
+}
+
+.app-topbar.search-open .topbar-search{
+  display:flex;
+}
+
+.header-search-button{
+  flex:0 0 52px;
+  width:52px;
+  min-width:52px;
+  height:46px !important;
+  min-height:46px !important;
+  padding:0 !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Durante la ricerca la lente scompare:
+   tutto lo spazio viene dato al campo ricerca. */
+.app-topbar.search-open .header-search-button{
+  display:none;
+}
+
+.app-topbar .search-input-wrap{
+  width:100%;
+  height:46px;
+}
+
+.app-topbar .search-input-wrap > input{
+  width:100%;
+  height:46px !important;
+  box-sizing:border-box;
+}
+
+/* La X deve essere sempre disponibile quando la ricerca è aperta. */
+.app-topbar.search-open .search-clear{
+  display:flex !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Mobile */
+@media (max-width:760px){
+
+  .app-topbar{
+    min-height:58px;
+    gap:8px;
+    padding:6px 0;
+  }
+
+  .topbar-title h1{
+    font-size:1.35rem;
+  }
+
+  .header-search-button{
+    width:46px;
+    min-width:46px;
+    flex-basis:46px;
+  }
+
+  .app-topbar.search-open .topbar-search{
+    width:100%;
+  }
+}
+
+/* =========================================================
+   HEADER COMPACT v2 - Home Assistant / mobile
+   ========================================================= */
+
+/*
+ * La barra superiore di Home Assistant contiene già
+ * menu + titolo dell'app.
+ * L'header interno diventa quindi una toolbar compatta.
+ */
+
+.app-topbar{
+  position:sticky;
+  top:0;
+  z-index:100;
+  min-height:0;
+  height:54px;
+  margin:0 0 14px 0;
+  padding:4px 0;
+  justify-content:flex-end;
+  background:transparent;
+  border-bottom:0;
+}
+
+/* Il titolo interno non serve: è già presente nella barra HA */
+.app-topbar .topbar-title{
+  display:none !important;
+}
+
+/* Ricerca chiusa */
+.app-topbar .topbar-search{
+  display:none;
+}
+
+/* Lente a destra */
+.app-topbar .header-search-button{
+  display:flex;
+  margin-left:auto;
+}
+
+/* Ricerca aperta */
+.app-topbar.search-open{
+  padding-left:0;
+}
+
+.app-topbar.search-open .topbar-search{
+  display:flex;
+  flex:1 1 auto;
+  width:auto;
+  min-width:0;
+}
+
+/* La lente lascia posto al campo */
+.app-topbar.search-open .header-search-button{
+  display:none;
+}
+
+.app-topbar.search-open .search-input-wrap{
+  width:100%;
+  min-width:0;
+}
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width:760px){
+
+  .app-topbar{
+    height:52px;
+    min-height:52px;
+    padding:3px 0;
+
+    /*
+     * Riserviamo spazio al pulsante flottante della sidebar
+     * visibile a sinistra.
+     */
+    padding-left:76px;
+  }
+
+  .app-topbar .header-search-button{
+    width:46px;
+    min-width:46px;
+    height:46px !important;
+    min-height:46px !important;
+  }
+
+  .app-topbar.search-open{
+    padding-left:14px;
+  }
+
+  .app-topbar.search-open .topbar-search{
+    width:100%;
+  }
+
+  .app-topbar.search-open .search-input-wrap{
+    height:46px;
+  }
+
+  .app-topbar.search-open .search-input-wrap > input{
+    height:46px !important;
+    width:100%;
+    min-width:0;
+  }
+}
+
+
+/* =========================================================
+   HEADER COMPACT v3
+   titolo visibile + fondo sticky + menu senza riquadro
+   ========================================================= */
+
+.app-topbar{
+  background:var(
+    --primary-background-color,
+    var(--ha-card-background, #111)
+  ) !important;
+
+  border-bottom:1px solid var(
+    --divider-color,
+    rgba(255,255,255,.15)
+  ) !important;
+
+  margin-left:-16px;
+  margin-right:-16px;
+  padding-left:16px;
+  padding-right:16px;
+}
+
+/* Titolo nuovamente visibile quando la ricerca è chiusa */
+.app-topbar .topbar-title{
+  display:block !important;
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.app-topbar .topbar-title h1{
+  margin:0;
+  font-size:1.35rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Durante la ricerca il titolo scompare */
+.app-topbar.search-open .topbar-title{
+  display:none !important;
+}
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width:760px){
+
+  .app-topbar{
+    height:58px;
+    min-height:58px;
+
+    /*
+     * spazio per il pulsante menu della sidebar
+     */
+    padding-left:14px;
+    padding-right:14px;
+  }
+
+  .app-topbar .topbar-title h1{
+    font-size:1.28rem;
+  }
+
+  .app-topbar.search-open{
+    padding-left:14px;
+  }
+
+}
+
+/* =========================================================
+   PULSANTE MENU MOBILE
+   solo icona, senza riquadro
+   ========================================================= */
+
+@media (max-width:760px){
+
+  .sidebar-toggle,
+  .mobile-sidebar-toggle,
+  .sidebar-mobile-toggle{
+    background:transparent !important;
+    border:0 !important;
+    box-shadow:none !important;
+    border-radius:0 !important;
+  }
+
+}
+
+/* =========================================================
+   MOBILE MENU - icona libera senza riquadro
+   ========================================================= */
+
+@media (max-width:760px){
+
+  .mobile-menu-btn{
+    background:transparent !important;
+    border:none !important;
+    box-shadow:none !important;
+    border-radius:0 !important;
+    padding:0 !important;
+
+    position:static !important;
+    flex:0 0 48px;
+
+    width:48px;
+    height:58px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    margin:0 8px 0 0;
+
+    font-size:28px;
+    line-height:1;
+  }
+
+}
+
+/* =========================================================
+   RICERCA ATTIVA - nasconde statistiche generali
+   ========================================================= */
+
+body.header-search-active .stats{
+  display:none !important;
+}
+
+
+/* =========================================================
+   IMPOSTAZIONI - separazione tra le sezioni
+   ========================================================= */
+
+.settings-page-panel .settings-section + .settings-section{
+  margin-top:24px;
+}
+
+
+/* ===== Proprietà e ambienti ===== */
+
+.locations-dialog{
+  width:min(780px,94vw);
+}
+
+.locations-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:18px;
+}
+
+.locations-column{
+  min-width:0;
+  padding:14px;
+  border:1px solid var(--divider-color, rgba(127,127,127,.25));
+  border-radius:14px;
+  background:rgba(127,127,127,.06);
+}
+
+.locations-column-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-height:40px;
+  margin-bottom:12px;
+}
+
+.locations-column-header b{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.locations-column-header button{
+  width:40px;
+  min-width:40px;
+  padding:7px;
+}
+
+.locations-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:120px;
+}
+
+.location-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 40px 40px;
+  gap:6px;
+  align-items:center;
+}
+
+.location-row{
+  width:100%;
+  padding:10px 12px;
+  text-align:left;
+  border-radius:10px;
+}
+
+.location-item .location-row{
+  min-width:0;
+  margin:0;
+}
+
+button.location-row.active{
+  outline:2px solid currentColor;
+  font-weight:600;
+  box-shadow:0 0 0 3px rgba(127,127,127,.10);
+}
+
+.location-action{
+  width:40px;
+  min-width:40px;
+  height:40px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Luogo: nome + modifica + predefinito + elimina */
+#propertiesList .location-item{
+  grid-template-columns:minmax(0,1fr) 40px 40px 40px;
+}
+
+/* Il luogo predefinito ha solo modifica + stella */
+#propertiesList .location-item:has(.location-action:disabled){
+  grid-template-columns:minmax(0,1fr) 40px 40px;
+}
+
+@media (max-width:760px){
+  .locations-grid{
+    grid-template-columns:1fr;
+  }
+
+  .locations-dialog{
+    width:94vw;
+  }
+
+  .locations-column{
+    padding:12px;
+  }
+}

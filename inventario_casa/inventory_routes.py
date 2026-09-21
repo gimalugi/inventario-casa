@@ -144,7 +144,7 @@ def create_inventory_blueprint(*, db):
         if not condition:
             return where_sql
         if where_sql:
-            return where_sql + " AND " + condition
+            return " WHERE (" + where_sql[7:] + ") AND " + condition
         return " WHERE " + condition
 
 
@@ -223,6 +223,15 @@ def create_inventory_blueprint(*, db):
         return items
 
 
+    def inventory_page_size():
+        try:
+            value = int(request.args.get("page_size", "50"))
+        except (TypeError, ValueError):
+            value = 50
+
+        return value if value in (10, 50, 100) else 50
+
+
     @bp.get("/api/inventory-groups")
     def api_inventory_groups():
         q = request.args.get("q", "").strip()
@@ -261,11 +270,11 @@ def create_inventory_blueprint(*, db):
             else:
                 count = conn.execute("SELECT COUNT(*) FROM items i" + where_sql, params).fetchone()[0]
                 groups = [{"group_key":"all","label":"Tutti gli elementi","icon":"📦","item_count":count}] if count else []
-                return jsonify(groups=groups, matched_count=count, page_size=50)
+                return jsonify(groups=groups, matched_count=count, page_size=inventory_page_size())
 
             groups = [dict(r) for r in conn.execute(sql, params)]
             matched_count = sum(int(g["item_count"]) for g in groups)
-            return jsonify(groups=groups, matched_count=matched_count, page_size=50)
+            return jsonify(groups=groups, matched_count=matched_count, page_size=inventory_page_size())
 
 
     @bp.get("/api/inventory-subgroups")
@@ -304,7 +313,7 @@ def create_inventory_blueprint(*, db):
             query_params=[fid,*params,type_id]
             rows=[dict(r) for r in conn.execute(sql,query_params)]
             return jsonify(subgroups=rows, enabled=True, field_id=fid, field_label=f["label"],
-                           matched_count=sum(int(x["item_count"]) for x in rows), page_size=50)
+                           matched_count=sum(int(x["item_count"]) for x in rows), page_size=inventory_page_size())
 
 
     @bp.get("/api/inventory-subgroup-items")
@@ -315,7 +324,7 @@ def create_inventory_blueprint(*, db):
             type_id=int(request.args.get("type_id","0")); offset=max(0,int(request.args.get("offset","0")))
         except (TypeError,ValueError):
             return jsonify(error="Parametri non validi"),400
-        page_size=50
+        page_size=inventory_page_size()
         where_sql,params=inventory_search_where(q)
         with db() as conn:
             t=conn.execute("SELECT subgroup_field_id FROM item_types WHERE id=?",(type_id,)).fetchone()
@@ -362,7 +371,7 @@ def create_inventory_blueprint(*, db):
         except (TypeError, ValueError):
             offset = 0
         # v2: dimensione pagina fissa per evitare liste enormi sul browser.
-        page_size = 50
+        page_size = inventory_page_size()
 
         where_sql, params = inventory_search_where(q)
         condition = ""

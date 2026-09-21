@@ -176,6 +176,27 @@ def init_db(
                 created_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS properties (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                is_default INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS environments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                property_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE,
+                UNIQUE(property_id, name)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_environments_property
+                ON environments(property_id);
+
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -232,6 +253,7 @@ def init_db(
         )
 
         ensure_column(conn, "items", "environment", "TEXT DEFAULT ''")
+        ensure_column(conn, "items", "environment_id", "INTEGER")
         ensure_column(conn, "items", "furniture", "TEXT DEFAULT ''")
         ensure_column(conn, "items", "shelf", "TEXT DEFAULT ''")
         ensure_column(conn, "items", "container_name", "TEXT DEFAULT ''")
@@ -251,6 +273,63 @@ def init_db(
                 "SET label=caption "
                 "WHERE TRIM(COALESCE(label,''))='' "
                 "AND TRIM(COALESCE(caption,''))<>''"
+            )
+
+        # Luoghi e ambienti.
+        # Migrazione compatibile dei vecchi valori testuali di environment.
+        now = datetime.now().isoformat(timespec="seconds")
+
+        prop = conn.execute(
+            "SELECT id FROM properties WHERE is_default=1 ORDER BY id LIMIT 1"
+        ).fetchone()
+
+        if prop is None:
+            prop = conn.execute(
+                "SELECT id FROM properties ORDER BY id LIMIT 1"
+            ).fetchone()
+
+        if prop is None:
+            cur = conn.execute(
+                "INSERT INTO properties(name,is_default,created_at) VALUES(?,?,?)",
+                ("Casa", 1, now),
+            )
+            property_id = cur.lastrowid
+        else:
+            property_id = prop[0]
+
+        # Migra soltanto gli elementi legacy non ancora collegati.
+        legacy_envs = conn.execute(
+            "SELECT DISTINCT TRIM(environment) "
+            "FROM items "
+            "WHERE environment_id IS NULL "
+            "AND TRIM(COALESCE(environment,''))<>''"
+        ).fetchall()
+
+        for row in legacy_envs:
+            env_name = row[0]
+
+            env = conn.execute(
+                "SELECT id FROM environments "
+                "WHERE property_id=? AND name=? COLLATE NOCASE LIMIT 1",
+                (property_id, env_name),
+            ).fetchone()
+
+            if env is None:
+                cur = conn.execute(
+                    "INSERT INTO environments"
+                    "(property_id,name,sort_order,active,created_at) "
+                    "VALUES(?,?,?,?,?)",
+                    (property_id, env_name, 0, 1, now),
+                )
+                environment_id = cur.lastrowid
+            else:
+                environment_id = env[0]
+
+            conn.execute(
+                "UPDATE items SET environment_id=? "
+                "WHERE environment_id IS NULL "
+                "AND TRIM(environment)=? COLLATE NOCASE",
+                (environment_id, env_name),
             )
 
         # Tipologie iniziali: vengono proposte soltanto su un database nuovo.

@@ -99,7 +99,18 @@ function setLanguage(language){
   }
 }
 
+function withPageSize(url){
+  if(!url.startsWith('api/inventory-'))return url;
+
+  const sep=url.includes('?') ? '&' : '?';
+
+  if(/[?&]page_size=/.test(url))return url;
+
+  return url+sep+'page_size='+encodeURIComponent(getPageSize());
+}
+
 async function api(path,opts={}){
+  path=withPageSize(path);
   const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
   const d=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d.error||t('error'));
@@ -157,20 +168,92 @@ function syncHomeAssistantTheme(){
   }
 }
 
+const PAGE_SIZE_ALLOWED=[10,50,100];
+
+function getPageSize(){
+  const saved=Number(localStorage.getItem('inventario_page_size') || 50);
+  return PAGE_SIZE_ALLOWED.includes(saved) ? saved : 50;
+}
+
+async function setPageSize(value){
+  const size=Number(value);
+  if(!PAGE_SIZE_ALLOWED.includes(size))return;
+
+  localStorage.setItem('inventario_page_size',String(size));
+  S.page_size=size;
+
+  await load();
+}
+
+function syncPageSizeSetting(){
+  const select=$('pageSizeSelect');
+  if(select)select.value=String(getPageSize());
+}
+
+let searchDebounceTimer=null;
+
 function updateSearchClear(){
   const input=$('search');
   const clear=$('searchClear');
   if(!input || !clear)return;
+
   clear.classList.toggle('show',input.value.length>0);
+
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer=setTimeout(()=>{
+    load();
+  },500);
 }
 
 async function clearSearch(){
   const input=$('search');
   if(!input)return;
+
   input.value='';
+  clearTimeout(searchDebounceTimer);
   updateSearchClear();
+  clearTimeout(searchDebounceTimer);
+
   input.focus();
   await load();
+}
+
+
+function openHeaderSearch(){
+  const topbar=$('appTopbar');
+  const input=$('search');
+
+  if(!topbar || !input)return;
+
+  sidebarShowView('inventoryView',0);
+
+  topbar.classList.add('search-open');
+  document.body.classList.add('header-search-active');
+
+  requestAnimationFrame(()=>{
+    input.focus();
+    input.select();
+  });
+}
+
+async function closeHeaderSearch(){
+  const topbar=$('appTopbar');
+  const input=$('search');
+
+  if(!topbar || !input)return;
+
+  const hadValue=input.value.length>0;
+
+  input.value='';
+  clearTimeout(searchDebounceTimer);
+  updateSearchClear();
+  clearTimeout(searchDebounceTimer);
+  topbar.classList.remove('search-open');
+  document.body.classList.remove('header-search-active');
+
+  if(hadValue){
+    await load();
+  }
 }
 
 
@@ -298,12 +381,15 @@ function toggleNewItemPanel(){
 async function loadInventoryGroups(){
   const q=$('search').value.trim();
   const grouping=currentItemsGrouping();
-  const params=new URLSearchParams({group_by:grouping});
+  const params=new URLSearchParams({
+    group_by:grouping,
+    page_size:String(getPageSize())
+  });
   if(q)params.set('q',q);
   const data=await api('api/inventory-groups?'+params.toString());
   S.groups=data.groups||[];
   S.matched_count=Number(data.matched_count||0);
-  S.page_size=Number(data.page_size||50);
+  S.page_size=getPageSize();
   S.groupItems={};
   S.groupHasMore={};
   S.groupOffsets={};
@@ -401,7 +487,7 @@ async function load(){
   S.subgroupHasMore={};
   S.subgroupOffsets={};
   S.items=[];
-  S.page_size=50;
+  S.page_size=getPageSize();
   await loadInventoryGroups();
   render();
 }
@@ -1078,6 +1164,7 @@ async function createItem(){
       item_type_id:$('aType').value||null,
       quantity:$('aQty').value,
       environment:$('aEnv').value,
+      environment_id:$('aEnv').selectedOptions[0]?.dataset.environmentId || null,
       furniture:$('aFurn').value,
       shelf:$('aShelf').value,
       container_name:$('aCont').value,
@@ -1103,11 +1190,30 @@ function addPreviewRow(rows,label,value){
 }
 
 async function showItemPreview(id){
-  let i=S.items.find(x=>x.id===id);
-  if(!i){
-    try{i=await api('api/items/'+id); mergeLoadedItems([i]);}
-    catch(e){alert(e.message);return;}
+  let i;
+  try{
+    i=await api('api/items/'+id);
+    mergeLoadedItems([i]);
+  }catch(e){
+    alert(e.message);
+    return;
   }
+  const topbar=$('appTopbar');
+  const searchInput=$('search');
+
+  if(searchInput){
+    searchInput.value='';
+    clearTimeout(searchDebounceTimer);
+    updateSearchClear();
+    clearTimeout(searchDebounceTimer);
+  }
+
+  if(topbar){
+    topbar.classList.remove('search-open');
+  }
+
+  document.body.classList.remove('header-search-active');
+
   viewingItem=id;
   const typeDef=typeById(i.item_type_id);
   const rows=[];
@@ -1119,6 +1225,19 @@ async function showItemPreview(id){
     const v=values[String(f.id)] ?? values[f.id];
     addPreviewRow(rows,f.label,v);
   }
+  if(!locationsData.length) await loadLocations();
+
+  let itemPropertyName = '';
+  if(i.environment_id){
+    const itemProperty = locationsData.find(prop =>
+      (prop.environments || []).some(
+        env => env.id === Number(i.environment_id)
+      )
+    );
+    itemPropertyName = itemProperty?.name || '';
+  }
+
+  addPreviewRow(rows,t('property'),itemPropertyName);
   addPreviewRow(rows,t('environment'),i.environment);
   addPreviewRow(rows,t('furniture'),i.furniture);
   addPreviewRow(rows,t('shelf'),i.shelf);
@@ -1168,7 +1287,7 @@ async function editItem(id){
   $('eName').value=i.name||'';
   $('eType').value=i.item_type_id||'';
   $('eQty').value=i.quantity||1;
-  $('eEnv').value=i.environment||'';
+  await loadEditLocations(i.environment || '', i.environment_id || null);
   $('eFurn').value=i.furniture||'';
   $('eShelf').value=i.shelf||'';
   $('eCont').value=i.container_name||'';
@@ -1199,6 +1318,7 @@ async function saveItem(){
       item_type_id:$('eType').value||null,
       quantity:$('eQty').value,
       environment:$('eEnv').value,
+      environment_id:$('eEnv').selectedOptions[0]?.dataset.environmentId || null,
       furniture:$('eFurn').value,
       shelf:$('eShelf').value,
       container_name:$('eCont').value,
@@ -1762,6 +1882,24 @@ function sidebarBackup(){
 
 function sidebarShowView(viewId, menuIndex){
 
+  if(viewId !== 'inventoryView'){
+    const topbar=$('appTopbar');
+    const input=$('search');
+
+    if(input){
+      input.value='';
+      clearTimeout(searchDebounceTimer);
+      updateSearchClear();
+      clearTimeout(searchDebounceTimer);
+    }
+
+    if(topbar){
+      topbar.classList.remove('search-open');
+    }
+
+    document.body.classList.remove('header-search-active');
+  }
+
   document.querySelectorAll('.app-view').forEach(view=>{
     view.classList.remove('active');
   });
@@ -1770,6 +1908,11 @@ function sidebarShowView(viewId, menuIndex){
 
   if(view){
     view.classList.add('active');
+  }
+
+  const stats=document.querySelector('.stats');
+  if(stats){
+    stats.style.display=(viewId==='inventoryView') ? '' : 'none';
   }
 
   sidebarSetActive(menuIndex);
@@ -1915,6 +2058,8 @@ function sidebarNewItem(){
   document.body.classList.remove('show-new-item');
   sidebarShowView('newItemView',1);
 
+  loadAddLocations();
+
   const panel=document.getElementById('newItemPanel');
 
   if(panel){
@@ -1954,4 +2099,456 @@ function sidebarBackup(){
 function sidebarSettings(){
   document.body.classList.remove('show-new-item');
   sidebarShowView('settingsView',4);
+}
+
+
+document.addEventListener('DOMContentLoaded',()=>{
+  syncPageSizeSetting();
+});
+
+/* ===== Proprietà e ambienti ===== */
+
+let locationsData = [];
+let selectedPropertyId = null;
+
+async function openLocationsDialog(){
+  const dlg = $('locationsDlg');
+  if(!dlg) return;
+
+  dlg.style.display = 'flex';
+  await loadLocations();
+}
+
+function closeLocationsDialog(){
+  const dlg = $('locationsDlg');
+  if(dlg) dlg.style.display = 'none';
+}
+
+async function loadLocations(){
+  const res = await fetch('api/properties');
+  const data = await res.json();
+
+  locationsData = data.properties || [];
+
+  if(!locationsData.length){
+    selectedPropertyId = null;
+  }else if(!locationsData.some(p => p.id === selectedPropertyId)){
+    const def = locationsData.find(p => p.is_default);
+    selectedPropertyId = (def || locationsData[0]).id;
+  }
+
+  renderLocations();
+}
+
+function renderLocations(){
+  const properties = $('propertiesList');
+  const environments = $('environmentsList');
+
+  if(!properties || !environments) return;
+
+  const environmentsTitle = $('environmentsColumnTitle');
+  const selectedForTitle = locationsData.find(
+    p => p.id === selectedPropertyId
+  );
+
+  if(environmentsTitle){
+    environmentsTitle.textContent = selectedForTitle
+      ? `Ambienti di: ${selectedForTitle.name}`
+      : 'Ambienti';
+  }
+
+  properties.innerHTML = '';
+
+  locationsData.forEach(prop => {
+    const wrap = document.createElement('div');
+    wrap.className = 'location-item';
+
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'secondary location-row' +
+      (prop.id === selectedPropertyId ? ' active' : '');
+
+    row.textContent = prop.name;
+
+    row.onclick = () => {
+      selectedPropertyId = prop.id;
+      renderLocations();
+    };
+
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'secondary location-action';
+    edit.textContent = '✏️';
+    edit.title = t('rename');
+    edit.onclick = () => renameProperty(prop);
+
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = prop.is_default
+      ? 'secondary location-action'
+      : 'danger location-action';
+
+    if(prop.is_default){
+      action.textContent = '★';
+      action.title = t('default_property');
+      action.disabled = true;
+    }else{
+      action.textContent = '🗑️';
+      action.title = t('delete');
+      action.onclick = () => deletePropertyLocation(prop);
+    }
+
+    const makeDefault = document.createElement('button');
+    makeDefault.type = 'button';
+    makeDefault.className = 'secondary location-action';
+    makeDefault.textContent = '☆︎';
+    makeDefault.title = t('set_default_property');
+    makeDefault.onclick = () => setDefaultProperty(prop);
+
+    wrap.append(row, edit);
+
+    if(!prop.is_default){
+      wrap.append(makeDefault);
+    }
+
+    wrap.append(action);
+    properties.appendChild(wrap);
+  });
+
+  environments.innerHTML = '';
+
+  const selected = locationsData.find(
+    p => p.id === selectedPropertyId
+  );
+
+  (selected?.environments || []).forEach(env => {
+    const wrap = document.createElement('div');
+    wrap.className = 'location-item';
+
+    const row = document.createElement('div');
+    row.className = 'location-row';
+    row.textContent = env.name;
+
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'secondary location-action';
+    edit.textContent = '✏️';
+    edit.title = t('rename');
+    edit.onclick = () => renameEnvironment(env);
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'danger location-action';
+    del.textContent = '🗑️';
+    del.title = t('delete');
+    del.onclick = () => deleteEnvironmentLocation(env);
+
+    wrap.append(row, edit, del);
+    environments.appendChild(wrap);
+  });
+
+  const addBtn = $('addEnvironmentBtn');
+  if(addBtn) addBtn.disabled = !selected;
+}
+
+const manageLocationsBtn = $('manageLocationsBtn');
+if(manageLocationsBtn){
+  manageLocationsBtn.onclick = openLocationsDialog;
+}
+
+async function addProperty(){
+  const name = prompt(t('property_name_prompt') || 'Nome del nuovo luogo:');
+
+  if(!name || !name.trim()) return;
+
+  const res = await fetch('api/properties', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: name.trim()
+    })
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    alert(data.error || 'Errore');
+    return;
+  }
+
+  selectedPropertyId = data.property.id;
+  await loadLocations();
+}
+
+async function addEnvironment(){
+  if(!selectedPropertyId) return;
+
+  const name = prompt(t('environment_name_prompt') || 'Nome del nuovo ambiente:');
+
+  if(!name || !name.trim()) return;
+
+  const res = await fetch('api/environments', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      property_id: selectedPropertyId,
+      name: name.trim()
+    })
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    alert(data.error || 'Errore');
+    return;
+  }
+
+  await loadLocations();
+}
+
+async function renameProperty(prop){
+  const name = prompt(t('rename_property_prompt'), prop.name);
+  if(!name || !name.trim() || name.trim() === prop.name) return;
+
+  const res = await fetch(`api/properties/${prop.id}`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name.trim()})
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    alert(data.error || 'Errore');
+    return;
+  }
+
+  await loadLocations();
+}
+
+async function deletePropertyLocation(prop){
+  if(!confirm(tf('delete_property_confirm', {name:prop.name}))) return;
+
+  const res = await fetch(`api/properties/${prop.id}`, {
+    method:'DELETE'
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    alert(data.error || 'Errore');
+    return;
+  }
+
+  selectedPropertyId = null;
+  await loadLocations();
+}
+
+async function renameEnvironment(env){
+  const name = prompt(t('rename_environment_prompt'), env.name);
+  if(!name || !name.trim() || name.trim() === env.name) return;
+
+  const res = await fetch(`api/environments/${env.id}`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name.trim()})
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    alert(data.error || 'Errore');
+    return;
+  }
+
+  await loadLocations();
+}
+
+async function deleteEnvironmentLocation(env){
+  if(!confirm(tf('delete_environment_confirm', {name:env.name}))) return;
+
+  const res = await fetch(`api/environments/${env.id}`, {
+    method:'DELETE'
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    alert(data.error || 'Errore');
+    return;
+  }
+
+  await loadLocations();
+}
+
+async function setDefaultProperty(prop){
+  const res = await fetch(`api/properties/${prop.id}/default`, {
+    method:'PUT'
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    alert(data.error || 'Errore');
+    return;
+  }
+
+  await loadLocations();
+}
+
+async function loadAddLocations(){
+  if(!locationsData.length){
+    const res = await fetch('api/properties');
+    const data = await res.json();
+    locationsData = data.properties || [];
+  }
+
+  const select = $('aProperty');
+  if(!select) return;
+
+  select.innerHTML = '';
+
+  locationsData.forEach(prop => {
+    const option = document.createElement('option');
+    option.value = prop.id;
+    option.textContent = prop.name;
+
+    if(prop.is_default){
+      option.selected = true;
+    }
+
+    select.appendChild(option);
+  });
+
+  updateAddEnvironments();
+}
+
+function updateAddEnvironments(){
+  const propertySelect = $('aProperty');
+  const environmentSelect = $('aEnv');
+
+  if(!propertySelect || !environmentSelect) return;
+
+  const propertyId = Number(propertySelect.value);
+
+  const prop = locationsData.find(
+    p => p.id === propertyId
+  );
+
+  environmentSelect.innerHTML = '';
+
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = '—';
+  environmentSelect.appendChild(empty);
+
+  (prop?.environments || [])
+    .filter(env => env.active)
+    .forEach(env => {
+      const option = document.createElement('option');
+      option.value = env.name;
+      option.dataset.environmentId = env.id;
+      option.textContent = env.name;
+      environmentSelect.appendChild(option);
+    });
+}
+
+async function loadEditLocations(currentEnvironment='', currentEnvironmentId=null){
+  if(!locationsData.length){
+    const res = await fetch('api/properties');
+    const data = await res.json();
+    locationsData = data.properties || [];
+  }
+
+  const propertySelect = $('eProperty');
+  if(!propertySelect) return;
+
+  propertySelect.innerHTML = '';
+
+  let matchedProperty = null;
+
+  if(currentEnvironmentId){
+    matchedProperty = locationsData.find(prop =>
+      (prop.environments || []).some(
+        env => env.id === Number(currentEnvironmentId)
+      )
+    );
+  }
+
+  if(!matchedProperty && currentEnvironment){
+    matchedProperty = locationsData.find(prop =>
+      (prop.environments || []).some(
+        env => env.name === currentEnvironment
+      )
+    );
+  }
+
+  if(!matchedProperty){
+    matchedProperty =
+      locationsData.find(prop => prop.is_default) ||
+      locationsData[0] ||
+      null;
+  }
+
+  locationsData.forEach(prop => {
+    const option = document.createElement('option');
+    option.value = prop.id;
+    option.textContent = prop.name;
+    option.selected = matchedProperty?.id === prop.id;
+    propertySelect.appendChild(option);
+  });
+
+  updateEditEnvironments(currentEnvironment, currentEnvironmentId);
+}
+
+function updateEditEnvironments(currentEnvironment='', currentEnvironmentId=null){
+  const propertySelect = $('eProperty');
+  const environmentSelect = $('eEnv');
+
+  if(!propertySelect || !environmentSelect) return;
+
+  const propertyId = Number(propertySelect.value);
+  const prop = locationsData.find(p => p.id === propertyId);
+
+  environmentSelect.innerHTML = '';
+
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = '—';
+  environmentSelect.appendChild(empty);
+
+  (prop?.environments || [])
+    .filter(env => env.active)
+    .forEach(env => {
+      const option = document.createElement('option');
+      option.value = env.name;
+      option.dataset.environmentId = env.id;
+      option.textContent = env.name;
+      environmentSelect.appendChild(option);
+    });
+
+  if(currentEnvironmentId){
+    const option = [...environmentSelect.options].find(
+      option => Number(option.dataset.environmentId) === Number(currentEnvironmentId)
+    );
+
+    if(option){
+      environmentSelect.value = option.value;
+      return;
+    }
+  }
+
+  if(currentEnvironment){
+    const exists = [...environmentSelect.options]
+      .some(option => option.value === currentEnvironment);
+
+    if(!exists){
+      const legacy = document.createElement('option');
+      legacy.value = currentEnvironment;
+      legacy.textContent = currentEnvironment;
+      environmentSelect.appendChild(legacy);
+    }
+
+    environmentSelect.value = currentEnvironment;
+  }
 }

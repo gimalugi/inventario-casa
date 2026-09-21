@@ -1,3 +1,15 @@
+## 2.5.3
+
+- Ridisegnato l'header dell'applicazione con navigazione e ricerca più compatte, ottimizzate anche per dispositivi mobili.
+- Migliorato il comportamento della ricerca globale e il passaggio tra ricerca, inventario e altre viste.
+- Corretta la visualizzazione dei risultati di ricerca nei rispettivi gruppi e tipologie.
+- Aggiunta nelle Impostazioni la scelta del numero di elementi visualizzati per pagina: 10, 50 o 100.
+- Migliorata la visualizzazione delle statistiche contestuali nella vista Inventario.
+- Migliorata la visualizzazione del dettaglio degli elementi.
+- Corretta la visualizzazione del campo "Luogo" nel dettaglio dell'elemento.
+- Migliorata la resa responsive dell'interfaccia su smartphone.
+- Nessuna modifica allo schema del database.
+
 ## 2.5.2
 
 - Introdotta la nuova sidebar di navigazione.

@@ -181,5 +181,22 @@
   "sidebar_settings": "Impostazioni",
   "settings": "Impostazioni",
   "settings_description": "Personalizza Inventario Casa.",
-  "language_description": "Lingua dell'interfaccia"
+  "language_description": "Lingua dell'interfaccia",
+  "items_per_page": "Elementi per pagina",
+  "items_per_page_description": "Numero di elementi caricati per volta nell'inventario",
+  "properties_and_environments": "Luoghi e ambienti",
+  "properties_and_environments_description": "Gestisci luoghi, sedi, stanze e ambienti dell'inventario",
+  "property": "Luogo",
+  "environment_room": "Ambiente / stanza",
+  "add_property": "Aggiungi luogo",
+  "add_environment": "Aggiungi ambiente",
+  "property_name_prompt": "Nome del nuovo luogo:",
+  "environment_name_prompt": "Nome del nuovo ambiente:",
+  "rename": "Rinomina",
+  "rename_property_prompt": "Nuovo nome del luogo:",
+  "rename_environment_prompt": "Nuovo nome dell'ambiente:",
+  "delete_property_confirm": "Eliminare il luogo {name}?",
+  "delete_environment_confirm": "Eliminare l'ambiente {name}?",
+  "default_property": "Luogo predefinito",
+  "set_default_property": "Imposta come luogo predefinito"
 }

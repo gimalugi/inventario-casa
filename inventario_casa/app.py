@@ -10,6 +10,7 @@ from type_routes import create_type_blueprint
 from item_routes import create_item_blueprint
 from lookup_routes import create_lookup_blueprint
 from inventory_routes import create_inventory_blueprint
+from location_routes import create_location_blueprint
 from backup_restore import restore_database_backup as backup_restore_database
 from database import (
     db as database_connect,
@@ -100,6 +101,13 @@ except Exception as exc:
 
 app.register_blueprint(
     create_inventory_blueprint(
+        db=db,
+    )
+)
+
+
+app.register_blueprint(
+    create_location_blueprint(
         db=db,
     )
 )

@@ -11,13 +11,6 @@
 </head>
 <body>
 
-<button id="mobileMenuBtn"
-        class="mobile-menu-btn"
-        type="button"
-        onclick="toggleAppSidebar()"
-        aria-label="Apri menu"
-        title="Menu">☰</button>
-
 <div id="sidebarOverlay"
      class="sidebar-overlay"
      onclick="closeAppSidebar()"></div>
@@ -88,25 +81,42 @@
 
 <div class="app-shell">
 <div class="wrap">
-<header>
-  <div>
+<header class="app-topbar" id="appTopbar">
+
+  <button id="mobileMenuBtn"
+          class="mobile-menu-btn"
+          type="button"
+          onclick="toggleAppSidebar()"
+          aria-label="Apri menu"
+          title="Menu">☰</button>
+
+  <div class="topbar-title" id="topbarTitle">
     <h1>🏠 <span data-i18n="app_name">Inventario Casa</span></h1>
-    <div class="sub" data-i18n="subtitle">Trova cosa possiedi e dove si trova.</div>
   </div>
-  <div class="search">
+
+  <div class="search topbar-search" id="topbarSearch">
     <div class="search-input-wrap">
-      <input id="search" data-i18n-placeholder="search_placeholder" placeholder="Cerca qualsiasi cosa…" oninput="updateSearchClear()">
+      <input id="search"
+             data-i18n-placeholder="search_placeholder"
+             placeholder="Cerca qualsiasi cosa…"
+             oninput="updateSearchClear()">
+
       <button id="searchClear"
               type="button"
               class="search-clear"
-              onclick="clearSearch()"
-              aria-label="Cancella ricerca"
-              data-i18n-aria-label="clear_search"
-              title="Cancella ricerca"
-              data-i18n-title="clear_search">×</button>
+              onclick="closeHeaderSearch()"
+              aria-label="Chiudi ricerca"
+              title="Chiudi ricerca">×</button>
     </div>
-    <button type="button" class="secondary" onclick="load()">🔎</button>
   </div>
+
+  <button id="headerSearchButton"
+          type="button"
+          class="secondary header-search-button"
+          onclick="openHeaderSearch()"
+          aria-label="Cerca"
+          title="Cerca">🔎</button>
+
 </header>
 
 <div class="stats">
@@ -129,7 +139,7 @@
             <option value="none" data-i18n="none">Nessuno</option>
           </select>
         </label>
-        <div class="items-page-size" data-i18n-title="progressive_loading" title="Caricamento progressivo" data-i18n="per_page_50">50 per volta</div>
+
       </div>
     </div>
     <div id="itemsListInfo" class="items-list-info"></div>
@@ -176,7 +186,16 @@
 
     <div id="add-position" class="tab">
       <div class="form">
-        <input id="aEnv" list="envs" data-i18n-placeholder="environment_example" placeholder="Ambiente, es. Cantina">
+        <label>
+          <span data-i18n="property">Luogo</span>
+          <select id="aProperty" onchange="updateAddEnvironments()"></select>
+        </label>
+
+        <label>
+          <span data-i18n="environment_room">Ambiente / stanza</span>
+          <select id="aEnv"></select>
+        </label>
+
         <input id="aFurn" list="furns" data-i18n-placeholder="furniture_placeholder" placeholder="Mobile/Scaffale">
         <input id="aShelf" list="shelves" data-i18n-placeholder="shelf_placeholder" placeholder="Ripiano/Cassetto">
         <input id="aCont" list="containers" data-i18n-placeholder="container_placeholder" placeholder="Contenitore">
@@ -334,6 +353,46 @@
     </select>
         </div>
       </div>
+
+      <div class="settings-section">
+        <div class="settings-section-info">
+          <h3>📄 <span data-i18n="items_per_page">Elementi per pagina</span></h3>
+          <div class="sub" data-i18n="items_per_page_description">
+            Numero di elementi caricati per volta nell'inventario
+          </div>
+        </div>
+
+        <div class="settings-control">
+          <select id="pageSizeSelect"
+                  class="language-select"
+                  onchange="setPageSize(this.value)"
+                  aria-label="Elementi per pagina"
+                  title="Elementi per pagina">
+            <option value="10">10</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-section locations-settings-section">
+        <div class="settings-section-info">
+          <h3>🏠 <span data-i18n="properties_and_environments">Luoghi e ambienti</span></h3>
+          <div class="sub" data-i18n="properties_and_environments_description">
+            Gestisci case, sedi, stanze e ambienti dell'inventario
+          </div>
+        </div>
+
+        <div class="settings-control">
+          <button type="button"
+                  class="secondary"
+                  id="manageLocationsBtn"
+                  data-i18n="manage">
+            Gestisci
+          </button>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -382,6 +441,58 @@
 </div>
 
 
+<div id="locationsDlg" class="dialogbg">
+  <div class="dialog locations-dialog">
+    <button type="button"
+            class="dialog-close-btn"
+            onclick="closeLocationsDialog()"
+            aria-label="Chiudi"
+            data-i18n-aria-label="close"
+            title="Chiudi"
+            data-i18n-title="close">×</button>
+
+    <h2>🏠 <span data-i18n="properties_and_environments">Luoghi e ambienti</span></h2>
+
+    <div class="locations-grid">
+
+      <div class="locations-column">
+        <div class="locations-column-header">
+          <b data-i18n="property">Luogo</b>
+          <button type="button"
+                  class="secondary"
+                  onclick="addProperty()"
+                  data-i18n-title="add_property"
+                  title="Aggiungi luogo">＋</button>
+        </div>
+
+        <div id="propertiesList" class="locations-list"></div>
+      </div>
+
+      <div class="locations-column">
+        <div class="locations-column-header">
+          <b id="environmentsColumnTitle">Ambienti</b>
+          <button type="button"
+                  class="secondary"
+                  id="addEnvironmentBtn"
+                  onclick="addEnvironment()"
+                  data-i18n-title="add_environment"
+                  title="Aggiungi ambiente">＋</button>
+        </div>
+
+        <div id="environmentsList" class="locations-list"></div>
+      </div>
+
+    </div>
+
+    <div class="savebar">
+      <button class="secondary"
+              data-i18n="close"
+              onclick="closeLocationsDialog()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+
 <div id="viewDlg" class="dialogbg" onclick="if(event.target===this) closeItemPreview()">
   <div class="dialog item-preview-dialog">
     <button type="button" class="dialog-close-btn" onclick="closeItemPreview()" aria-label="Chiudi" data-i18n-aria-label="close"
@@ -423,7 +534,16 @@
 
     <div id="edit-position" class="tab">
       <div class="form">
-        <input id="eEnv" list="envs" data-i18n-placeholder="environment" placeholder="Ambiente">
+        <label>
+          <span data-i18n="property">Luogo</span>
+          <select id="eProperty" onchange="updateEditEnvironments()"></select>
+        </label>
+
+        <label>
+          <span data-i18n="environment_room">Ambiente / stanza</span>
+          <select id="eEnv"></select>
+        </label>
+
         <input id="eFurn" list="furns" data-i18n-placeholder="furniture_placeholder" placeholder="Mobile/Scaffale">
         <input id="eShelf" list="shelves" data-i18n-placeholder="shelf_placeholder" placeholder="Ripiano/Cassetto">
         <input id="eCont" list="containers" data-i18n-placeholder="container_placeholder" placeholder="Contenitore">

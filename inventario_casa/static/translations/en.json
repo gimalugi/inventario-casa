@@ -181,5 +181,22 @@
   "sidebar_settings": "Settings",
   "settings": "Settings",
   "settings_description": "Customize Inventario Casa.",
-  "language_description": "Interface language"
+  "language_description": "Interface language",
+  "items_per_page": "Items per page",
+  "items_per_page_description": "Number of items loaded at a time in the inventory",
+  "properties_and_environments": "Properties and environments",
+  "properties_and_environments_description": "Manage homes, locations, rooms and environments in the inventory",
+  "property": "Property",
+  "environment_room": "Room / environment",
+  "add_property": "Add property",
+  "add_environment": "Add environment",
+  "property_name_prompt": "Name of the new property:",
+  "environment_name_prompt": "Name of the new room / environment:",
+  "rename": "Rename",
+  "rename_property_prompt": "New property name:",
+  "rename_environment_prompt": "New room / environment name:",
+  "delete_property_confirm": "Delete property {name}?",
+  "delete_environment_confirm": "Delete room / environment {name}?",
+  "default_property": "Default property",
+  "set_default_property": "Set as default"
 }

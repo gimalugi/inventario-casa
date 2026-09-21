@@ -1,4 +1,4 @@
-# 🏠 Inventario Casa v2.5.2
+# 🏠 Inventario Casa v2.5.3
 
 🇮🇹 **Italiano** | 🇬🇧 [English](README_EN.md)
 
@@ -168,6 +168,17 @@ Non utilizza:
 Le operazioni vengono eseguite quando richieste dall'utente.
 
 ## 📋 Cronologia delle versioni
+
+### 2.5.3 — Interfaccia, ricerca e paginazione
+
+- Nuovo header compatto e ottimizzato per desktop e mobile.
+- Migliorata la ricerca globale e la navigazione tra le viste.
+- Corretta la suddivisione dei risultati di ricerca per tipologia.
+- Paginazione configurabile dalle Impostazioni: 10, 50 o 100 elementi.
+- Migliorate le statistiche contestuali dell'Inventario.
+- Corretta la visualizzazione del campo "Luogo" nel dettaglio degli elementi.
+- Migliorata la resa responsive su smartphone.
+- Nessuna modifica allo schema del database.
 
 ### 2.5.2 — Sidebar e Impostazioni
 
