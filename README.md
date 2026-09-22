@@ -1,4 +1,4 @@
-# 🏠 Inventario Casa v2.5.3
+# 🏠 Inventario Casa v2.5.4
 
 🇮🇹 **Italiano** | 🇬🇧 [English](README_EN.md)
 
@@ -168,6 +168,12 @@ Non utilizza:
 Le operazioni vengono eseguite quando richieste dall'utente.
 
 ## 📋 Cronologia delle versioni
+
+### 2.5.4 — Riapertura tipologie e ricerca
+
+- Corretta la riapertura delle tipologie con elementi o sottogruppi già caricati che potevano apparire vuote.
+- Ripristinato l'inventario senza filtri quando la navigazione cancella la ricerca globale.
+- Nessuna modifica allo schema del database.
 
 ### 2.5.3 — Interfaccia, ricerca e paginazione
 

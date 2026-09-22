@@ -1,3 +1,9 @@
+## 2.5.4
+
+- Corretta la riapertura delle tipologie che potevano apparire vuote dopo il caricamento di un altro gruppo, anche con elementi o sottogruppi già in memoria.
+- Ricaricato l'inventario senza filtri quando il passaggio a un'altra vista cancella la ricerca globale.
+- Nessuna modifica allo schema del database.
+
 ## 2.5.3
 
 - Ridisegnato l'header dell'applicazione con navigazione e ricerca più compatte, ottimizzate anche per dispositivi mobili.

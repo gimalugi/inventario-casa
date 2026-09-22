@@ -359,7 +359,11 @@ async function toggleItemGroup(btn){
   const key=group.dataset.groupKey;
   const collapsed=group.classList.toggle('collapsed');
   localStorage.setItem(groupStorageKey(grouping,key),collapsed?'1':'0');
-  if(!collapsed) await ensureOpenGroupLoaded(grouping,key);
+  if(!collapsed){
+    await ensureOpenGroupLoaded(grouping,key);
+    // Un rendering precedente puo aver svuotato il corpo del gruppo chiuso.
+    renderInventory();
+  }
 }
 
 function setNewItemCollapsed(collapsed){
@@ -1881,6 +1885,7 @@ function sidebarBackup(){
 // =========================================================
 
 function sidebarShowView(viewId, menuIndex){
+  const clearedSearch=viewId !== 'inventoryView' && !!$('search')?.value.trim();
 
   if(viewId !== 'inventoryView'){
     const topbar=$('appTopbar');
@@ -1922,6 +1927,7 @@ function sidebarShowView(viewId, menuIndex){
     top:0,
     behavior:'smooth'
   });
+  if(clearedSearch) load().catch(e=>alert(e.message));
 }
 
 /*

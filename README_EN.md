@@ -1,4 +1,4 @@
-# 🏠 Inventario Casa v2.5.3
+# 🏠 Inventario Casa v2.5.4
 
 🇮🇹 [Italiano](README.md) | 🇬🇧 **English**
 
@@ -162,6 +162,12 @@ It does not use:
 Operations are performed when requested by the user.
 
 ## 📋 Version history
+
+### 2.5.4 — Reopening item types and search
+
+- Fixed item type groups appearing empty when reopened with items or subgroups already loaded.
+- Reloaded the unfiltered inventory when navigation clears the global search.
+- No database schema changes.
 
 ### 2.5.3 — Interface, search and pagination
 
