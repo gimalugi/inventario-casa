@@ -44,3 +44,4 @@ Inventario Casa è un'app per Home Assistant con backend Python/Flask, database 
 - Non creare tag, release GitHub, push o commit salvo richiesta esplicita.
 - Prima di una release mostrare un riepilogo delle modifiche e attendere conferma.
 - Mantenere aggiornato `inventario_casa/CHANGELOG.md` quando viene preparata una release.
+- Per ogni rilascio di produzione autorizzato alla pubblicazione, creare e pubblicare anche il tag Git `v<versione>` sul commit del rilascio, verificando che sia presente sul remoto. La pubblicazione del rilascio include il relativo tag; non ometterlo e non spostare o sovrascrivere tag esistenti. Questa regola non si applica alle build locali TEST.
