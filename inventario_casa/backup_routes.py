@@ -17,15 +17,16 @@ def create_backup_blueprint(
     backup_keep_manual,
     get_startup_error,
     restore_database_backup,
+    current_schema_version=1,
 ):
     bp = Blueprint("backups", __name__)
 
     @bp.get("/api/backups")
     def api_backups():
         return jsonify(
-            backups=backup_list(backup_dir),
+            backups=backup_list(backup_dir, current_schema_version),
             startup_error=get_startup_error(),
-            current_database=inspect_database_file(db_path),
+            current_database=inspect_database_file(db_path, current_schema_version),
         )
 
     @bp.post("/api/backups/create")
@@ -65,11 +66,12 @@ def create_backup_blueprint(
             return jsonify(error=str(exc)), 404
 
         except ValueError as exc:
-            return jsonify(error=str(exc)), 400
+            return jsonify(error=str(exc), error_code=str(exc)), 400
 
         except Exception as exc:
             return jsonify(
                 error=str(exc),
+                error_code=str(exc),
                 startup_error=get_startup_error(),
             ), 500
 

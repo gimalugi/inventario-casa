@@ -146,25 +146,7 @@ def create_item_blueprint(*, db, media_dir):
     @bp.delete("/api/items/<int:item_id>")
     def api_delete_item(item_id):
         with db() as conn:
-            photos = list(
-                conn.execute(
-                    """SELECT filename,thumb_filename
-                       FROM item_photos
-                       WHERE item_id=?""",
-                    (item_id,),
-                )
-            )
-
-            for photo in photos:
-                for filename in (
-                    photo["filename"],
-                    photo["thumb_filename"],
-                ):
-                    try:
-                        (media_dir / filename).unlink(missing_ok=True)
-                    except Exception:
-                        pass
-
+            # Keep image files: older database backups may still reference them.
             conn.execute(
                 "DELETE FROM items WHERE id=?",
                 (item_id,),

@@ -47,7 +47,20 @@ def create_pre_migration_backup(db_path, backup_dir, from_version, to_version):
 
 
 
-def inspect_database_file(path):
+# Columns present in the historical inventory format. Additive migrations may
+# supply newer fields (environment_id, placeholder, photo label/caption).
+INVENTORY_COLUMNS = {
+    "items": {"id", "name", "description", "quantity", "item_type_id",
+              "container_code", "tags", "notes", "created_at", "updated_at"},
+    "item_types": {"id", "name", "icon", "created_at"},
+    "type_fields": {"id", "type_id", "label", "field_type", "required",
+                    "options", "sort_order"},
+    "item_custom_values": {"item_id", "field_id", "value"},
+    "item_photos": {"id", "item_id", "filename", "thumb_filename", "created_at"},
+}
+
+
+def inspect_database_file(path, max_schema_version=None):
     """Controlla integrità e informazioni essenziali di un DB SQLite."""
     path = Path(path)
 
@@ -58,6 +71,7 @@ def inspect_database_file(path):
         "types": None,
         "photos": None,
         "schema_version": None,
+        "validation_error": None,
     }
 
     if not path.exists():
@@ -66,7 +80,7 @@ def inspect_database_file(path):
 
     conn = None
     try:
-        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        conn = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)
 
         row = conn.execute("PRAGMA integrity_check").fetchone()
         integrity = row[0] if row else ""
@@ -83,6 +97,18 @@ def inspect_database_file(path):
                 "SELECT name FROM sqlite_master WHERE type='table'"
             )
         }
+
+        for table, required in INVENTORY_COLUMNS.items():
+            columns = {row[1] for row in conn.execute(f'PRAGMA table_info("{table}")')}
+            if table not in tables or not required.issubset(columns):
+                result["valid"] = False
+                result["validation_error"] = "backup_invalid_inventory"
+                return result
+
+        if conn.execute("PRAGMA foreign_key_check").fetchone() is not None:
+            result["valid"] = False
+            result["validation_error"] = "backup_foreign_keys"
+            return result
 
         if "items" in tables:
             result["items"] = conn.execute(
@@ -107,13 +133,25 @@ def inspect_database_file(path):
                 try:
                     result["schema_version"] = int(row[0])
                 except (TypeError, ValueError):
-                    result["schema_version"] = row[0]
+                    result["valid"] = False
+                    result["validation_error"] = "backup_invalid_schema"
+                    return result
+            else:
+                result["schema_version"] = 0
         else:
             result["schema_version"] = 0
+
+        if result["schema_version"] < 0:
+            result["valid"] = False
+            result["validation_error"] = "backup_invalid_schema"
+        elif max_schema_version is not None and result["schema_version"] > max_schema_version:
+            result["valid"] = False
+            result["validation_error"] = "backup_future_schema"
 
         return result
 
     except Exception as exc:
+        result["valid"] = False
         result["integrity"] = str(exc)
         return result
 
@@ -177,7 +215,7 @@ def create_database_backup(db_path, backup_dir, prefix="inventory_manual", verif
     return backup_path
 
 
-def list_database_backups(backup_dir):
+def list_database_backups(backup_dir, max_schema_version=None):
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
@@ -188,7 +226,7 @@ def list_database_backups(backup_dir):
         reverse=True,
     ):
         stat = path.stat()
-        check = inspect_database_file(path)
+        check = inspect_database_file(path, max_schema_version)
 
         rows.append({
             "filename": path.name,

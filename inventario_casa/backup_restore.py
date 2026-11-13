@@ -20,6 +20,8 @@ def restore_database_backup(
     backup_keep_pre_restore,
     init_db,
     set_startup_error,
+    current_schema_version=1,
+    prepare_restore=None,
 ):
     """
     Ripristina un backup verificato.
@@ -33,10 +35,12 @@ def restore_database_backup(
         backup_path = resolve_backup_path(backup_dir, filename)
 
         # 1. Verifica preventiva del backup scelto.
-        backup_info = inspect_database_file(backup_path)
+        backup_info = inspect_database_file(backup_path, current_schema_version)
 
-        if backup_info.get("integrity") != "ok":
-            raise RuntimeError(
+        if not backup_info.get("valid"):
+            if backup_info.get("validation_error"):
+                raise ValueError(backup_info["validation_error"])
+            raise ValueError(
                 "Il backup selezionato non supera il controllo di integrità"
             )
 
@@ -56,12 +60,9 @@ def restore_database_backup(
                     prefix="inventory_pre_restore",
                     verify=True,
                 )
-                apply_backup_retention(
-                    backup_dir,
-                    "pre_restore",
-                    backup_keep_pre_restore,
-                )
             except Exception as exc:
+                if inspect_database_file(db_path).get("valid"):
+                    raise RuntimeError("backup_safety_failed") from exc
                 safety_warning = (
                     "Impossibile creare il backup di sicurezza del "
                     f"database corrente: {type(exc).__name__}: {exc}"
@@ -78,10 +79,11 @@ def restore_database_backup(
 
         source = None
         target = None
+        replaced = False
 
         try:
             # 3. Ricostruisce il backup in un NUOVO DB.
-            source = sqlite3.connect(str(backup_path))
+            source = sqlite3.connect(backup_path.resolve().as_uri() + "?mode=ro", uri=True)
             target = sqlite3.connect(str(restore_tmp))
 
             source.backup(target)
@@ -94,9 +96,11 @@ def restore_database_backup(
             source = None
 
             # 4. Verifica il DB temporaneo PRIMA di sostituire quello attivo.
-            restored_info = inspect_database_file(restore_tmp)
+            if prepare_restore is not None:
+                prepare_restore(restore_tmp)
+            restored_info = inspect_database_file(restore_tmp, current_schema_version)
 
-            if restored_info.get("integrity") != "ok":
+            if not restored_info.get("valid"):
                 raise RuntimeError(
                     "Il database ripristinato non supera "
                     "il controllo di integrità"
@@ -112,20 +116,27 @@ def restore_database_backup(
 
             # 6. Sostituzione atomica del database corrente.
             restore_tmp.replace(db_path)
+            replaced = True
 
-            # 7. Esegue eventuali migrazioni necessarie.
-            init_db()
+            # Production migrates the candidate before replacement. Keep the
+            # callback fallback for callers using the previous interface.
+            if prepare_restore is None:
+                init_db()
 
             # 8. Verifica finale dopo init/migrazioni.
-            final_info = inspect_database_file(db_path)
+            final_info = inspect_database_file(db_path, current_schema_version)
 
-            if final_info.get("integrity") != "ok":
+            if not final_info.get("valid"):
                 raise RuntimeError(
                     "Il database non supera il controllo "
                     "di integrità dopo il ripristino"
                 )
 
             set_startup_error(None)
+            try:
+                apply_backup_retention(backup_dir, "pre_restore", backup_keep_pre_restore)
+            except OSError as exc:
+                safety_warning = (safety_warning or "") + f" Retention: {exc}"
 
             return {
                 "ok": True,
@@ -141,7 +152,8 @@ def restore_database_backup(
 
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
-            set_startup_error(error)
+            if replaced:
+                set_startup_error(error)
 
             print(
                 "[Inventario Casa] ERRORE ripristino database: "

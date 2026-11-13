@@ -198,5 +198,12 @@
   "delete_property_confirm": "Eliminare il luogo {name}?",
   "delete_environment_confirm": "Eliminare l'ambiente {name}?",
   "default_property": "Luogo predefinito",
-  "set_default_property": "Imposta come luogo predefinito"
+  "set_default_property": "Imposta come luogo predefinito",
+  "backup_invalid_inventory": "Il file non contiene un database compatibile di Inventario Casa.",
+  "backup_invalid_schema": "La versione dello schema del database non è valida.",
+  "backup_future_schema": "Questo database richiede una versione più recente di Inventario Casa.",
+  "backup_foreign_keys": "Il database contiene riferimenti a elementi mancanti.",
+  "backup_safety_failed": "Impossibile creare il backup di sicurezza. Ripristino annullato.",
+  "database_recovery_required": "Database in Recovery: ricarica la pagina e ripristina un backup valido.",
+  "backup_media_notice": "Il backup .db non include le fotografie: salva separatamente /media/inventario_casa/oggetti/. Le immagini rimosse dall’inventario restano su disco per permettere il ripristino dei vecchi backup e continuano a occupare spazio."
 }

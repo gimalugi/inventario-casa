@@ -198,5 +198,12 @@
   "delete_property_confirm": "Delete property {name}?",
   "delete_environment_confirm": "Delete room / environment {name}?",
   "default_property": "Default property",
-  "set_default_property": "Set as default"
+  "set_default_property": "Set as default",
+  "backup_invalid_inventory": "This file does not contain a compatible Home Inventory database.",
+  "backup_invalid_schema": "The database schema version is invalid.",
+  "backup_future_schema": "This database requires a newer version of Home Inventory.",
+  "backup_foreign_keys": "The database contains references to missing records.",
+  "backup_safety_failed": "Cannot create the safety backup. Restore cancelled.",
+  "database_recovery_required": "Database in Recovery: reload the page and restore a valid backup.",
+  "backup_media_notice": "The .db backup does not include photos: back up /media/inventario_casa/oggetti/ separately. Images removed from the inventory remain on disk so older backups can restore them and continue to use storage."
 }

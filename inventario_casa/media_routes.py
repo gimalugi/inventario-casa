@@ -110,15 +110,7 @@ def create_media_blueprint(*, db, media_dir):
             if not photo:
                 return jsonify(error="Foto non trovata"), 404
 
-            for filename in (
-                photo["filename"],
-                photo["thumb_filename"],
-            ):
-                try:
-                    (media_dir / filename).unlink(missing_ok=True)
-                except Exception:
-                    pass
-
+            # Remove only the record; keep files recoverable by older backups.
             conn.execute(
                 "DELETE FROM item_photos WHERE id=?",
                 (photo_id,),

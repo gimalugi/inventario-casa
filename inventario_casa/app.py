@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import json
 import threading
+from maintenance import protect_database_requests
 from frontend import FRONTEND_ASSETS, asset_version, load_translations
 from backup_routes import create_backup_blueprint
 from media_routes import create_media_blueprint
@@ -42,11 +43,12 @@ DB_BACKUP_DIR = Path("/media/inventario_casa/db_backups")
 
 CURRENT_SCHEMA_VERSION = 1
 
-DB_MAINTENANCE_LOCK = threading.Lock()
+DB_MAINTENANCE_LOCK = threading.RLock()
 STARTUP_DB_ERROR = None
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
+protect_database_requests(app, DB_MAINTENANCE_LOCK, lambda: STARTUP_DB_ERROR)
 
 
 
@@ -75,13 +77,16 @@ def restore_database_backup(filename):
         backup_keep_pre_restore=BACKUP_KEEP_PRE_RESTORE,
         init_db=init_db,
         set_startup_error=set_startup_db_error,
+        current_schema_version=CURRENT_SCHEMA_VERSION,
+        prepare_restore=init_db,
     )
 
 
-def init_db():
+def init_db(database_path=None):
+    candidate = DB_PATH if database_path is None else database_path
     return database_init(
-        DB_PATH,
-        DATA_DIR,
+        candidate,
+        candidate.parent,
         MEDIA_DIR,
         DB_BACKUP_DIR,
         CURRENT_SCHEMA_VERSION,
@@ -125,6 +130,7 @@ app.register_blueprint(
         maintenance_lock=DB_MAINTENANCE_LOCK,
         backup_keep_manual=BACKUP_KEEP_MANUAL,
         get_startup_error=lambda: STARTUP_DB_ERROR,
+        current_schema_version=CURRENT_SCHEMA_VERSION,
         restore_database_backup=restore_database_backup,
     )
 )

@@ -1,4 +1,4 @@
-# 🏠 Inventario Casa v2.5.4
+# 🏠 Inventario Casa v2.5.5
 
 🇮🇹 [Italiano](README.md) | 🇬🇧 **English**
 
@@ -268,3 +268,24 @@ The complete detailed history is available in the [CHANGELOG](inventario_casa/CH
 ---
 
 **Inventario Casa** — your home inventory directly in Home Assistant.
+
+
+## Restore and photo protection
+
+Database requests are serialized during restore. Keep the supplied **single
+Gunicorn worker** configuration; its four threads share the maintenance lock.
+
+Only structurally compatible inventory backups with valid SQLite checks and a
+supported schema can be restored. Legacy databases without `app_meta` and with
+photo `caption` columns remain supported. Migration and validation run on a
+temporary candidate before replacing the active database.
+
+Database `.db` backups **do not include photo files**. Back up
+`/media/inventario_casa/oggetti/` separately, and make sure Home Assistant backups
+include media when relying on those backups.
+
+Deleting an item or photo removes its inventory records but retains original
+images and thumbnails on disk so older backups can still recover them. There is
+no automatic cleanup: retained files continue to consume storage. Do not remove
+files referenced by backups you intend to keep usable. Images already deleted
+by previous releases require a separate media backup to recover.

@@ -4,11 +4,21 @@ from datetime import datetime
 from backup import create_pre_migration_backup, apply_backup_retention
 
 
+class DatabaseConnection(sqlite3.Connection):
+    """Commit/rollback and close before releasing a request's maintenance lock."""
+
+    def __exit__(self, *args):
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
+
+
 def db(db_path, data_dir, media_dir):
     data_dir.mkdir(parents=True, exist_ok=True)
     media_dir.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, factory=DatabaseConnection)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
@@ -46,8 +56,8 @@ def read_schema_version(db_path):
 
         try:
             return int(row[0])
-        except (TypeError, ValueError):
-            return 0
+        except (TypeError, ValueError) as exc:
+            raise ValueError("backup_invalid_schema") from exc
     finally:
         conn.close()
 
@@ -143,6 +153,10 @@ def init_db(
     new_database = not db_path.exists()
 
     previous_schema_version = read_schema_version(db_path)
+    if previous_schema_version < 0:
+        raise ValueError("backup_invalid_schema")
+    if previous_schema_version > current_schema_version:
+        raise ValueError("backup_future_schema")
 
     if (
         db_path.exists()

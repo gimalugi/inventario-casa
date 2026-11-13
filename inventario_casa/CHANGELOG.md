@@ -1,3 +1,27 @@
+## 2.5.5
+
+### Italiano
+
+- Serializzate le richieste al database durante backup e ripristino; chiuse esplicitamente le connessioni SQLite.
+- Rifiutati backup estranei, incompleti, con riferimenti non validi o schema futuro; impedito il downgrade della versione dello schema.
+- Migrazioni del ripristino eseguite sul candidato temporaneo prima di sostituire il database corrente.
+- Ripristino annullato se il database corrente è valido ma il backup di sicurezza fallisce; mantenuto il recupero da database corrotti.
+- Corretta la retention quando si ripristina un vecchio backup pre-restore.
+- Conservati i file delle fotografie rimosse per permettere il recupero tramite vecchi backup; aggiunto avviso IT/EN sul backup separato delle immagini e sullo spazio occupato.
+- Corretta la paginazione con apostrofi, virgolette e altri caratteri nei nomi dei gruppi e sottogruppi.
+- Aggiunti test automatici su dati isolati. Nessuna modifica allo schema SQLite.
+
+### English
+
+- Serialized database requests during backup and restore; explicitly closed SQLite connections.
+- Rejected unrelated/incomplete backups, invalid references and future schemas; prevented schema-version downgrades.
+- Migrated restored databases in a temporary candidate before replacing the active database.
+- Cancelled restore when a healthy current database cannot be backed up; retained recovery from corrupt databases.
+- Fixed retention when restoring an old pre-restore backup.
+- Retained removed photo files for recovery from older backups; added IT/EN guidance on separate photo backups and storage use.
+- Fixed pagination for group/subgroup names containing apostrophes, quotes and other special characters.
+- Added isolated regression tests. No SQLite schema changes.
+
 ## 2.5.4
 
 - Corretta la riapertura delle tipologie che potevano apparire vuote dopo il caricamento di un altro gruppo, anche con elementi o sottogruppi già in memoria.

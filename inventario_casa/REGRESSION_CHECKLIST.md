@@ -1,3 +1,11 @@
+## 2.5.5 — Sicurezza inventario / Inventory safety
+
+- [x] Eseguiti 14 test Python su dati temporanei in Windows e Linux.
+- [x] Verificate 8 azioni JavaScript con caratteri speciali e sintassi frontend.
+- [ ] Verificare manualmente Backup e Recovery in Ingress, in italiano e inglese.
+- [ ] Verificare su smartphone la paginazione con apostrofi nei gruppi.
+- [ ] Verificare il backup separato della cartella fotografie.
+
 ## v2.2.1 — Tema HA e ricerca
 
 - [ ] Avvio applicazione senza errori.

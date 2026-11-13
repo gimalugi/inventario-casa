@@ -113,7 +113,7 @@ async function api(path,opts={}){
   path=withPageSize(path);
   const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
   const d=await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(d.error||t('error'));
+  if(!r.ok) throw new Error(d.error_code ? t(d.error_code) : (d.error||t('error')));
   return d;
 }
 
@@ -587,15 +587,15 @@ function renderLoadMore(key,loaded,total){
 
   return `<div class="inventory-pager">
     ${hasPrev ? `
-      <button type="button" class="secondary" onclick="loadFirstGroup('${esc(key)}',event)">⏮ ${t('first')}</button>
-      <button type="button" class="secondary" onclick="loadPreviousGroup('${esc(key)}',event)">‹ ${t('previous')}</button>
+      <button type="button" class="secondary" data-page-action="first" data-group-key="${esc(key)}" data-total="${total}">⏮ ${t('first')}</button>
+      <button type="button" class="secondary" data-page-action="previous" data-group-key="${esc(key)}" data-total="${total}">‹ ${t('previous')}</button>
     ` : ''}
 
     <span class="hint"><strong>${tf('range_of_total',{first,last,total})}</strong></span>
 
     ${hasNext ? `
-      <button type="button" class="secondary" onclick="loadMoreGroup('${esc(key)}',event)">${t('next')} ›</button>
-      <button type="button" class="secondary" onclick="loadLastGroup('${esc(key)}',${total},event)">${t('last')} ⏭</button>
+      <button type="button" class="secondary" data-page-action="next" data-group-key="${esc(key)}" data-total="${total}">${t('next')} ›</button>
+      <button type="button" class="secondary" data-page-action="last" data-group-key="${esc(key)}" data-total="${total}">${t('last')} ⏭</button>
     ` : ''}
   </div>`;
 }
@@ -721,15 +721,15 @@ function renderSubgroupLoadMore(typeKey,subKey,loaded,total){
 
   return `<div class="inventory-pager">
     ${hasPrev ? `
-      <button type="button" class="secondary" onclick="loadFirstSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">⏮ ${t('first')}</button>
-      <button type="button" class="secondary" onclick="loadPreviousSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">‹ ${t('previous')}</button>
+      <button type="button" class="secondary" data-page-action="first" data-type-key="${esc(typeKey)}" data-subgroup-key="${esc(subKey)}" data-total="${total}">⏮ ${t('first')}</button>
+      <button type="button" class="secondary" data-page-action="previous" data-type-key="${esc(typeKey)}" data-subgroup-key="${esc(subKey)}" data-total="${total}">‹ ${t('previous')}</button>
     ` : ''}
 
     <span class="hint"><strong>${tf('range_of_total',{first,last,total})}</strong></span>
 
     ${hasNext ? `
-      <button type="button" class="secondary" onclick="loadMoreSubgroup('${esc(typeKey)}','${esc(subKey)}',event)">${t('next')} ›</button>
-      <button type="button" class="secondary" onclick="loadLastSubgroup('${esc(typeKey)}','${esc(subKey)}',${total},event)">${t('last')} ⏭</button>
+      <button type="button" class="secondary" data-page-action="next" data-type-key="${esc(typeKey)}" data-subgroup-key="${esc(subKey)}" data-total="${total}">${t('next')} ›</button>
+      <button type="button" class="secondary" data-page-action="last" data-type-key="${esc(typeKey)}" data-subgroup-key="${esc(subKey)}" data-total="${total}">${t('last')} ⏭</button>
     ` : ''}
   </div>`;
 }
@@ -1594,7 +1594,7 @@ async function loadBackupList(){
           <div class="backup-row-status ${b.valid?'ok':'bad'}">
             ${b.valid
               ? `✓ ${t('backup_valid')}${b.items!==null?` · ${b.items} ${t('backup_items')}`:''}`
-              : `⚠ ${esc(b.integrity||t('backup_invalid'))}`}
+              : `⚠ ${esc(b.validation_error ? t(b.validation_error) : (b.integrity||t('backup_invalid')))}`}
           </div>
 
           <div class="backup-row-actions">
@@ -2558,3 +2558,19 @@ function updateEditEnvironments(currentEnvironment='', currentEnvironmentId=null
     environmentSelect.value = currentEnvironment;
   }
 }
+
+// Delegation preserves apostrophes, quotes and backslashes in group names.
+document.addEventListener('click', event => {
+  const button=event.target.closest('[data-page-action]');
+  if(!button)return;
+  event.stopPropagation();
+  const {pageAction,groupKey,typeKey,subgroupKey,total}=button.dataset;
+  const actions=typeKey===undefined
+    ? {first:loadFirstGroup,previous:loadPreviousGroup,next:loadMoreGroup,last:loadLastGroup}
+    : {first:loadFirstSubgroup,previous:loadPreviousSubgroup,next:loadMoreSubgroup,last:loadLastSubgroup};
+  const action=actions[pageAction];
+  if(!action)return;
+  const args=typeKey===undefined ? [groupKey] : [typeKey,subgroupKey];
+  if(pageAction==='last')args.push(Number(total));
+  action(...args,event).catch(error=>alert(error.message));
+});

@@ -252,3 +252,47 @@ La schermata Recovery permette di vedere, scaricare e ripristinare i backup
 disponibili senza usare Docker, SQLite o la CLI di Home Assistant.
 
 Il sistema non utilizza servizi periodici o processi in background.
+
+
+## Protezione dei ripristini e delle fotografie
+
+Le richieste al database vengono serializzate durante il ripristino. Il server
+deve mantenere la configurazione prevista: **un worker Gunicorn**; i quattro
+thread condividono lo stesso blocco di manutenzione.
+
+Un backup è ripristinabile soltanto se contiene la struttura di Inventario Casa,
+supera i controlli SQLite e non richiede uno schema più recente. I vecchi database
+senza `app_meta` e le foto con colonna `caption` restano compatibili. Il candidato
+viene migrato e verificato prima della sostituzione del database attivo.
+
+I backup `.db` **non includono i file delle fotografie**. Salvare separatamente
+`/media/inventario_casa/oggetti/`, anche quando si usa un backup completo di Home
+Assistant: verificare che includa la cartella media.
+
+Eliminare una foto o un elemento rimuove i riferimenti dall'inventario ma conserva
+originali e miniature sul disco. In questo modo un backup precedente può ancora
+recuperarli. Non è prevista una pulizia automatica: questi file continuano a
+occupare spazio. Non cancellarli se si vogliono mantenere utilizzabili i backup
+che li referenziano. Le foto già cancellate dalle versioni precedenti possono
+essere recuperate solo da una copia separata dei media.
+
+
+## Restore and photo protection
+
+Database requests are serialized during restore. Keep the supplied **single
+Gunicorn worker** configuration; its four threads share the maintenance lock.
+
+Only structurally compatible inventory backups with valid SQLite checks and a
+supported schema can be restored. Legacy databases without `app_meta` and with
+photo `caption` columns remain supported. Migration and validation run on a
+temporary candidate before replacing the active database.
+
+Database `.db` backups **do not include photo files**. Back up
+`/media/inventario_casa/oggetti/` separately, and make sure Home Assistant backups
+include media when relying on those backups.
+
+Deleting an item or photo removes its inventory records but retains original
+images and thumbnails on disk so older backups can still recover them. There is
+no automatic cleanup: retained files continue to consume storage. Do not remove
+files referenced by backups you intend to keep usable. Images already deleted
+by previous releases require a separate media backup to recover.

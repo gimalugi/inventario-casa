@@ -137,6 +137,13 @@ const $=id=>document.getElementById(id);
 
 const RECOVERY_I18N={
   it:{
+    "backup_invalid_inventory": "Il file non contiene un database compatibile di Inventario Casa.",
+    "backup_invalid_schema": "La versione dello schema del database non è valida.",
+    "backup_future_schema": "Questo database richiede una versione più recente di Inventario Casa.",
+    "backup_foreign_keys": "Il database contiene riferimenti a elementi mancanti.",
+    "backup_safety_failed": "Impossibile creare il backup di sicurezza. Ripristino annullato.",
+    "database_recovery_required": "Database in Recovery: ricarica la pagina e ripristina un backup valido.",
+    "backup_media_notice": "Il backup .db non include le fotografie: salva separatamente /media/inventario_casa/oggetti/. Le immagini rimosse dall’inventario restano su disco per permettere il ripristino dei vecchi backup e continuano a occupare spazio.",
     title:'🛟 Inventario Casa - Recovery',
     description:'Inventario Casa non è riuscito ad aprire o aggiornare correttamente il database. I backup restano disponibili.',
     available_backups:'Backup disponibili',
@@ -156,6 +163,13 @@ const RECOVERY_I18N={
     integrity:'Integrity check'
   },
   en:{
+    "backup_invalid_inventory": "This file does not contain a compatible Home Inventory database.",
+    "backup_invalid_schema": "The database schema version is invalid.",
+    "backup_future_schema": "This database requires a newer version of Home Inventory.",
+    "backup_foreign_keys": "The database contains references to missing records.",
+    "backup_safety_failed": "Cannot create the safety backup. Restore cancelled.",
+    "database_recovery_required": "Database in Recovery: reload the page and restore a valid backup.",
+    "backup_media_notice": "The .db backup does not include photos: back up /media/inventario_casa/oggetti/ separately. Images removed from the inventory remain on disk so older backups can restore them and continue to use storage.",
     title:'🛟 Home Inventory - Recovery',
     description:'Home Inventory could not open or update the database correctly. Backups remain available.',
     available_backups:'Available backups',
@@ -218,6 +232,7 @@ const esc=s=>String(s??'')
  .replaceAll('&','&amp;')
  .replaceAll('<','&lt;')
  .replaceAll('>','&gt;')
+ .replaceAll("'",'&#39;')
  .replaceAll('"','&quot;');
 
 function bytes(n){
@@ -239,7 +254,7 @@ async function loadBackups(){
           <strong>${esc(b.filename)}</strong><br>
           <span class="muted">${esc(b.modified)} · ${bytes(b.size)}</span><br>
           <span class="${b.valid?'ok':'bad'}">
-            ${b.valid?rt('valid_backup'):'⚠ '+esc(b.integrity)}
+            ${b.valid?rt('valid_backup'):'⚠ '+esc(b.validation_error ? rt(b.validation_error) : b.integrity)}
           </span>
           ${b.items!==null
             ? `<div class="muted">${b.items} ${rt('items')} · ${b.types??'?'} ${rt('types')} · ${b.photos??'?'} ${rt('photos')}</div>`
@@ -250,7 +265,7 @@ async function loadBackups(){
                ${rt('download')}
             </a>
             ${b.valid?`
-              <button onclick="restoreBackup('${esc(b.filename)}')">
+              <button data-restore-file="${esc(b.filename)}">
                 ${rt('restore')}
               </button>`:''}
           </div>
@@ -279,7 +294,7 @@ async function restoreBackup(name){
   const d=await r.json().catch(()=>({}));
 
   if(!r.ok){
-    alert(d.error||rt('restore_failed'));
+    alert(d.error_code ? rt(d.error_code) : (d.error||rt('restore_failed')));
     await loadBackups();
     return;
   }
@@ -293,6 +308,10 @@ async function restoreBackup(name){
   location.reload();
 }
 
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-restore-file]');
+  if(button)restoreBackup(button.dataset.restoreFile);
+});
 loadBackups();
 </script>
 </body>

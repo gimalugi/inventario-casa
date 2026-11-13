@@ -14,6 +14,7 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /app/requirements.txt
 COPY app.py /app/app.py
 COPY frontend.py /app/frontend.py
 COPY database.py /app/database.py
+COPY maintenance.py /app/maintenance.py
 COPY backup.py /app/backup.py
 COPY backup_routes.py /app/backup_routes.py
 COPY backup_restore.py /app/backup_restore.py
